@@ -77,7 +77,7 @@
     }
   },
   "dashBoard": {
-    "enable": true,
+    "enable": false,
     "expireVerifyCode": 300000,
     "port": 3001,
     "passwordProtection": {
