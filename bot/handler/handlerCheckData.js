@@ -1,6 +1,7 @@
 /**
  * @author NTKhang
- * Enhanced by Maruf — logs real errors, no unhandled rejection
+ * Enhanced by Maruf — no FB API blocking, real error logging
+ * Original author credit preserved as required by MIT license.
  */
 
 const { db, utils, GoatBot } = global;
@@ -8,8 +9,9 @@ const { config } = GoatBot;
 const { log } = utils;
 const { creatingThreadData, creatingUserData } = global.client.database;
 
-const CREATE_TIMEOUT_MS = 60_000;
-const RETRY_AFTER_MS = 120_000;
+// ————— tuning —————
+const CREATE_TIMEOUT_MS = 20_000;       // 20s max
+const RETRY_AFTER_MS = 120_000;         // 2 min retry window
 const ERROR_CACHE_MAX = 5_000;
 
 const errorCache = new Map();
@@ -35,27 +37,32 @@ function isValidId(id) {
 function withTimeout(promise, ms, label) {
 	let timer;
 	return Promise.race([
-		promise.finally(() => clearTimeout(timer)),
+		Promise.resolve(promise).finally(() => clearTimeout(timer)),
 		new Promise((_, reject) => {
 			timer = setTimeout(() => reject(new Error(`${label} timed out after ${ms}ms`)), ms);
 		})
 	]);
 }
 
-// ————— thread —————
+// ————— thread create (non-blocking, FB-API-free when possible) —————
 function ensureThreadBackground(threadsData, threadID, event) {
 	if (hasRecentError(threadID)) return;
 	if (db.allThreadData.some((t) => String(t.threadID) === String(threadID))) return;
 	if (creatingThreadData.some((t) => String(t.threadID) === String(threadID))) return;
 
+	// Build thread info from event — this avoids FB API call inside create()
 	const eventInfo = event ? {
-		threadName: event.threadName || undefined,
-		isGroup: event.isGroup,
-		participantIDs: Array.isArray(event.participantIDs) ? event.participantIDs : undefined,
-		adminIDs: Array.isArray(event.adminIDs) ? event.adminIDs : undefined,
-		imageSrc: event.imageSrc,
-		emoji: event.emoji,
-		color: event.color
+		threadID: String(threadID),
+		threadName: event.threadName || "Unknown Group",
+		isGroup: event.isGroup || false,
+		participantIDs: Array.isArray(event.participantIDs) ? event.participantIDs.map(String) : [],
+		adminIDs: Array.isArray(event.adminIDs) ? event.adminIDs.map(String) : [],
+		members: Array.isArray(event.participantIDs)
+			? event.participantIDs.map(id => ({ userID: String(id), inGroup: true }))
+			: [],
+		imageSrc: event.imageSrc || undefined,
+		emoji: event.emoji || undefined,
+		color: event.color || undefined
 	} : undefined;
 
 	let resolveLock;
@@ -65,6 +72,7 @@ function ensureThreadBackground(threadsData, threadID, event) {
 	const entry = { threadID, promise: lockPromise };
 	creatingThreadData.push(entry);
 
+	// Fire and forget
 	(async () => {
 		try {
 			const threadData = await withTimeout(
@@ -83,7 +91,6 @@ function ensureThreadBackground(threadsData, threadID, event) {
 				return;
 			}
 			markError(threadID);
-			// ✅ LOG THE REAL ERROR
 			log.err(
 				"DATABASE",
 				`Thread ${threadID} create failed: ${err?.name || "Error"}: ${err?.message || err}`
@@ -102,14 +109,19 @@ function ensureThreadBackground(threadsData, threadID, event) {
 	})();
 }
 
-// ————— user —————
+// ————— user create —————
 function ensureUserBackground(usersData, senderID, event) {
 	if (hasRecentError(senderID)) return;
 	if (db.allUserData.some((u) => String(u.userID) === String(senderID))) return;
 	if (creatingUserData.some((u) => String(u.userID) === String(senderID))) return;
 
 	const eventInfo = event ? {
-		name: event.senderName || undefined
+		userID: String(senderID),
+		name: event.senderName || "Facebook User",
+		gender: 0,
+		banned: { status: false, reason: null, date: null },
+		settings: {},
+		data: { exp: 0, money: 0, level: 0, rank: 0 }
 	} : undefined;
 
 	let resolveLock;
@@ -158,18 +170,28 @@ function ensureUserBackground(usersData, senderID, event) {
 // ————— main —————
 module.exports = async function (usersData, threadsData, event) {
 	if (!event || typeof event !== "object") return;
+
 	const { threadID } = event;
 	const senderID = event.senderID || event.author || event.userID;
 
+	// Kick off DB writes in background — DO NOT AWAIT.
 	if (isValidId(threadID)) {
-		try { ensureThreadBackground(threadsData, threadID, event); } catch (e) { console.error("[CHECK THREAD]", e.message); }
+		try { ensureThreadBackground(threadsData, threadID, event); }
+		catch (e) { console.error("[CHECK THREAD]", e.message); }
 	}
-	if (isValidId(senderID)) {
-		try { ensureUserBackground(usersData, senderID, event); } catch (e) { console.error("[CHECK USER]", e.message); }
+
+	if (isValidId(senderID) && String(senderID) !== String(threadID)) {
+		try { ensureUserBackground(usersData, senderID, event); }
+		catch (e) { console.error("[CHECK USER]", e.message); }
+	} else if (isValidId(senderID)) {
+		try { ensureUserBackground(usersData, senderID, event); }
+		catch (e) { console.error("[CHECK USER]", e.message); }
 	}
+
 	return;
 };
 
+// debug helpers
 module.exports.resetErrorCache = (id) => {
 	if (id === undefined) errorCache.clear();
 	else errorCache.delete(String(id));
