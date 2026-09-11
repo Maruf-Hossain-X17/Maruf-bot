@@ -5,7 +5,7 @@ module.exports = {
     name: "pp",
     aliases: ["pfp", "profile"],
     version: "5.0",
-    author: "Gemini",
+    author: "Maruf",
     countDown: 5,
     role: 0,
     description: "টোকেন ছাড়াই প্রোফাইল পিকচার",
