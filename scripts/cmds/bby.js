@@ -7,7 +7,7 @@ const mongoose = require("mongoose");
 //          API & SECURITY SETTINGS
 // ==========================================
 const RAW_URL = "https://raw.githubusercontent.com/Ma1ru2f3/Api-base/refs/heads/main/baseApiUrl.json";
-const ADMIN_PASS = "Maruf@12345"; // 🔑 আপনার API এর সঠিক পাসওয়ার্ড এখানে দিন
+const ADMIN_PASS = "sorry"; // 🔑 আপনার API এর সঠিক পাসওয়ার্ড এখানে দিন
 
 // ডাইনামিক API URL আনার ফাংশন
 let cachedApiUrl = null;
