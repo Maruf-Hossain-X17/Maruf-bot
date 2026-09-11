@@ -1,12 +1,6 @@
 node_modules/
 .env
 .env.*
-account.txt
-account.txt.*
-appstate.json
-cookies.txt
-config.json
-configCommands.json
 backups/
 logs/
 *.log
