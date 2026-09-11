@@ -4,7 +4,7 @@
  * ! Official source code: https://github.com/ntkhang03/Goat-Bot-V2
  *
  * --------------------------------------------------------------------------
- * handlerCheckData enhanced by Maruf — non-blocking DB, fast timeout, memory safe
+ * handlerCheckData enhanced by Maruf — fully non-blocking, no unhandled rejection
  * Original author credit preserved as required by MIT license.
  * --------------------------------------------------------------------------
  */
@@ -15,12 +15,12 @@ const { log, getText } = utils;
 const { creatingThreadData, creatingUserData } = global.client.database;
 
 // ————— tuning —————
-const CREATE_TIMEOUT_MS = 15_000;        // ⬇️ 30s → 15s (Facebook slow হলে দ্রুত fail)
+const CREATE_TIMEOUT_MS = 45_000;        // ⬆️ 15s → 45s (FB API slow, patience দরকার)
+const RETRY_AFTER_MS = 60_000;            // fail হলে ৬০ সেকেন্ড পর retry
 const ERROR_CACHE_MAX = 5_000;
-const ERROR_CACHE_TTL_MS = 10 * 60_000;  // 10 min (আগে ছিল 30 min — দ্রুত retry)
 
-// internal error cache with timestamps
-const errorCache = new Map();
+const errorCache = new Map(); // id -> timestamp
+const retryQueue = new Map(); // id -> timer
 
 function markError(id) {
 	errorCache.set(String(id), Date.now());
@@ -30,14 +30,10 @@ function markError(id) {
 	}
 }
 
-function hasError(id) {
-	const key = String(id);
-	if (!errorCache.has(key)) return false;
-	if (Date.now() - errorCache.get(key) > ERROR_CACHE_TTL_MS) {
-		errorCache.delete(key);
-		return false;
-	}
-	return true;
+function hasRecentError(id) {
+	const t = errorCache.get(String(id));
+	if (!t) return false;
+	return Date.now() - t < RETRY_AFTER_MS;
 }
 
 function isValidId(id) {
@@ -45,36 +41,46 @@ function isValidId(id) {
 }
 
 function withTimeout(promise, ms, label) {
+	let timer;
 	return Promise.race([
-		promise,
-		new Promise((_, reject) =>
-			setTimeout(() => reject(new Error(`${label} timed out after ${ms}ms`)), ms)
-		)
+		promise.finally(() => clearTimeout(timer)),
+		new Promise((_, reject) => {
+			timer = setTimeout(() => reject(new Error(`${label} timed out after ${ms}ms`)), ms);
+		})
 	]);
 }
 
 // ————— NON-BLOCKING thread ensure —————
-function ensureThreadBackground(threadsData, threadID) {
-	if (hasError(threadID)) return;
+function ensureThreadBackground(threadsData, threadID, event) {
+	if (hasRecentError(threadID)) return;
 	if (db.allThreadData.some((t) => String(t.threadID) === String(threadID))) return;
 
 	const existing = creatingThreadData.find((t) => String(t.threadID) === String(threadID));
-	if (existing) return; // already being created
+	if (existing) return;
 
-	// Register lock SYNCHRONOUSLY
-	let resolveLock, rejectLock;
-	const lockPromise = new Promise((res, rej) => {
-		resolveLock = res;
-		rejectLock = rej;
-	});
+	// Build info from event so we don't need FB API call
+	const eventInfo = event ? {
+		threadName: event.threadName || undefined,
+		isGroup: event.isGroup,
+		participantIDs: Array.isArray(event.participantIDs) ? event.participantIDs : undefined,
+		adminIDs: Array.isArray(event.adminIDs) ? event.adminIDs : undefined,
+		imageSrc: event.imageSrc,
+		emoji: event.emoji,
+		color: event.color
+	} : undefined;
+
+	let resolveLock;
+	const lockPromise = new Promise((res) => { resolveLock = res; });
+	// FIX: attach catch to prevent unhandled rejection
+	lockPromise.catch(() => {});
+
 	const entry = { threadID, promise: lockPromise };
 	creatingThreadData.push(entry);
 
-	// Fire-and-forget — DO NOT await here!
 	(async () => {
 		try {
 			const threadData = await withTimeout(
-				threadsData.create(threadID),
+				threadsData.create(threadID, eventInfo),
 				CREATE_TIMEOUT_MS,
 				`createThread(${threadID})`
 			);
@@ -86,15 +92,21 @@ function ensureThreadBackground(threadsData, threadID) {
 		} catch (err) {
 			if (err?.name === "DATA_ALREADY_EXISTS") {
 				resolveLock();
-			} else {
-				rejectLock(err);
-				markError(threadID);
-				log.err(
-					"DATABASE",
-					`Groups with id '${threadID}' cannot be written to the database!`,
-					err?.message || err
-				);
+				return;
 			}
+			// Silent error — non-critical, retry later
+			markError(threadID);
+			// only log once per thread per 60s
+			if (!retryQueue.has(String(threadID))) {
+				log.warn?.("DATABASE", `Thread ${threadID} create failed — will retry in 60s`);
+				const timer = setTimeout(() => {
+					retryQueue.delete(String(threadID));
+					errorCache.delete(String(threadID));
+				}, RETRY_AFTER_MS);
+				if (timer.unref) timer.unref();
+				retryQueue.set(String(threadID), timer);
+			}
+			resolveLock(null);
 		} finally {
 			const idx = creatingThreadData.indexOf(entry);
 			if (idx !== -1) creatingThreadData.splice(idx, 1);
@@ -103,26 +115,30 @@ function ensureThreadBackground(threadsData, threadID) {
 }
 
 // ————— NON-BLOCKING user ensure —————
-function ensureUserBackground(usersData, senderID) {
-	if (hasError(senderID)) return;
+function ensureUserBackground(usersData, senderID, event) {
+	if (hasRecentError(senderID)) return;
 	if (db.allUserData.some((u) => String(u.userID) === String(senderID))) return;
 
 	const existing = creatingUserData.find((u) => String(u.userID) === String(senderID));
 	if (existing) return;
 
-	let resolveLock, rejectLock;
-	const lockPromise = new Promise((res, rej) => {
-		resolveLock = res;
-		rejectLock = rej;
-	});
+	// Info from event (avoid FB API call)
+	const eventInfo = event ? {
+		name: event.senderName || undefined,
+		gender: undefined
+	} : undefined;
+
+	let resolveLock;
+	const lockPromise = new Promise((res) => { resolveLock = res; });
+	lockPromise.catch(() => {}); // prevent unhandled rejection
+
 	const entry = { userID: senderID, promise: lockPromise };
 	creatingUserData.push(entry);
 
-	// Fire-and-forget
 	(async () => {
 		try {
 			const userData = await withTimeout(
-				usersData.create(senderID),
+				usersData.create(senderID, eventInfo),
 				CREATE_TIMEOUT_MS,
 				`createUser(${senderID})`
 			);
@@ -134,15 +150,19 @@ function ensureUserBackground(usersData, senderID) {
 		} catch (err) {
 			if (err?.name === "DATA_ALREADY_EXISTS") {
 				resolveLock();
-			} else {
-				rejectLock(err);
-				markError(senderID);
-				log.err(
-					"DATABASE",
-					`Users with id '${senderID}' cannot be written to the database!`,
-					err?.message || err
-				);
+				return;
 			}
+			markError(senderID);
+			if (!retryQueue.has(String(senderID))) {
+				log.warn?.("DATABASE", `User ${senderID} create failed — will retry in 60s`);
+				const timer = setTimeout(() => {
+					retryQueue.delete(String(senderID));
+					errorCache.delete(String(senderID));
+				}, RETRY_AFTER_MS);
+				if (timer.unref) timer.unref();
+				retryQueue.set(String(senderID), timer);
+			}
+			resolveLock(null);
 		} finally {
 			const idx = creatingUserData.indexOf(entry);
 			if (idx !== -1) creatingUserData.splice(idx, 1);
@@ -157,26 +177,19 @@ module.exports = async function (usersData, threadsData, event) {
 	const { threadID } = event;
 	const senderID = event.senderID || event.author || event.userID;
 
-	// ⚡ NON-BLOCKING: kick off DB writes in background, don't await them!
-	// This means the message handler will NOT wait for Facebook API calls.
-	// If a thread/user is new, they'll be created within a few seconds.
-	// Meanwhile, the bot still processes the message.
-
+	// Fire-and-forget — no await, no blocking, no unhandled rejection
 	if (isValidId(threadID)) {
-		try { ensureThreadBackground(threadsData, threadID); } catch (_) {}
+		try { ensureThreadBackground(threadsData, threadID, event); } catch (_) {}
 	}
 
-	if (isValidId(senderID) && String(senderID) !== String(threadID)) {
-		try { ensureUserBackground(usersData, senderID); } catch (_) {}
-	} else if (isValidId(senderID) && String(senderID) === String(threadID)) {
-		try { ensureUserBackground(usersData, senderID); } catch (_) {}
+	if (isValidId(senderID)) {
+		try { ensureUserBackground(usersData, senderID, event); } catch (_) {}
 	}
 
-	// Return immediately — do NOT wait
 	return;
 };
 
-// ————— exports for debugging —————
+// ————— debug helpers —————
 module.exports.resetErrorCache = (id) => {
 	if (id === undefined) errorCache.clear();
 	else errorCache.delete(String(id));
