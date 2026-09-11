@@ -1,7 +1,6 @@
 /**
  * @author NTKhang
  * ! The source code is written by NTKhang, please don't change the author's name everywhere. Thank you for using
- * ! Official source code: https://github.com/ntkhang03/Goat-Bot-V2
  *
  * --------------------------------------------------------------------------
  * handlerAction enhanced by Maruf — bug fixes, error isolation, safer reactions
@@ -23,28 +22,24 @@ module.exports = (
 	dashBoardData,
 	globalData
 ) => {
+	// ✅ এটা ঠিক আছে — handlerAction FROM handlerEvents
 	const handlerEvents = require(
 		process.env.NODE_ENV === "development" ? "./handlerEvents.dev.js" : "./handlerEvents.js"
 	)(api, threadModel, userModel, dashBoardModel, globalModel, usersData, threadsData, dashBoardData, globalData);
 
-	// ——— cached bot user id (avoid repeated API calls) ———
 	let _botID = null;
 	const getBotID = () => {
 		if (_botID) return _botID;
-		try {
-			_botID = api.getCurrentUserID();
-		} catch (_) {}
+		try { _botID = api.getCurrentUserID(); } catch (_) {}
 		return _botID;
 	};
 
-	// ——— admin check helper ———
 	const isAdmin = (uid) => {
 		if (!uid) return false;
 		const list = global.GoatBot?.config?.adminBot;
 		return Array.isArray(list) && list.includes(uid);
 	};
 
-	// ——— safe caller: isolates errors from one handler so others still run ———
 	const safeCall = (name, fn) => {
 		if (typeof fn !== "function") return;
 		try {
@@ -63,7 +58,6 @@ module.exports = (
 
 			const config = global.GoatBot?.config || {};
 
-			// ================= ANTI INBOX =================
 			if (
 				config.antiInbox === true &&
 				(event.senderID === event.threadID ||
@@ -73,18 +67,14 @@ module.exports = (
 				return;
 			}
 
-			// ================= MESSAGE HELPER =================
 			const message = createFuncMessage(api, event);
 
-			// ================= DB CHECK (non-fatal) =================
 			try {
 				await handlerCheckDB(usersData, threadsData, event);
 			} catch (err) {
 				console.error("[handlerCheckDB]", err?.stack || err?.message || err);
-				// don't return — let the command still run if possible
 			}
 
-			// ================= HANDLER EVENTS =================
 			let handlerChat;
 			try {
 				handlerChat = await handlerEvents(event, message);
@@ -94,12 +84,10 @@ module.exports = (
 			}
 			if (!handlerChat) return;
 
-			// ================= APPROVAL MODE (fixed) =================
 			if (config.approval) {
 				try {
 					let approvedData = await globalData.get("approved", "data", {});
 					if (!approvedData || typeof approvedData !== "object") approvedData = {};
-
 					if (!Array.isArray(approvedData.approved)) {
 						approvedData.approved = [];
 						await globalData.set("approved", approvedData, "data");
@@ -110,30 +98,18 @@ module.exports = (
 				}
 			}
 
-			// ================= DESTRUCTURE =================
 			const {
-				onAnyEvent,
-				onFirstChat,
-				onStart,
-				onChat,
-				onReply,
-				onEvent,
-				handlerEvent,
-				onReaction,
-				typ,
-				presence,
-				read_receipt
+				onAnyEvent, onFirstChat, onStart, onChat,
+				onReply, onEvent, handlerEvent, onReaction,
+				typ, presence, read_receipt
 			} = handlerChat;
 
-			// ================= ON ANY EVENT =================
 			safeCall("onAnyEvent", onAnyEvent);
 
-			// ================= REACTION CONFIG (safe) =================
 			const reactBy = config.reactBy || {};
 			const delReactions = Array.isArray(reactBy.delete) ? reactBy.delete : [];
 			const kickReactions = Array.isArray(reactBy.kick) ? reactBy.kick : [];
 
-			// ================= SWITCH =================
 			switch (event.type) {
 				case "message":
 				case "message_reply":
@@ -153,31 +129,26 @@ module.exports = (
 					safeCall("onReaction", onReaction);
 
 					const botID = getBotID();
-					const reactorID = event.userID; // who reacted
-					const targetSenderID = event.senderID; // author of the original message
+					const reactorID = event.userID;
+					const targetSenderID = event.senderID;
 					const isReactorAdmin = isAdmin(reactorID);
 
-					// ——— auto-unsend: admin reacts with a "delete" emoji on bot's own message ———
 					if (
 						delReactions.length &&
 						delReactions.includes(event.reaction) &&
 						isReactorAdmin &&
 						targetSenderID === botID
 					) {
-						try {
-							api.unsendMessage(event.messageID);
-						} catch (err) {
-							console.error("[reactBy.delete]", err?.message || err);
-						}
+						try { api.unsendMessage(event.messageID); }
+						catch (err) { console.error("[reactBy.delete]", err?.message || err); }
 					}
 
-					// ——— auto-kick: admin reacts with a "kick" emoji ———
 					if (
 						kickReactions.length &&
 						kickReactions.includes(event.reaction) &&
 						isReactorAdmin &&
 						targetSenderID &&
-						targetSenderID !== botID // never kick the bot itself
+						targetSenderID !== botID
 					) {
 						api.removeUserFromGroup(targetSenderID, event.threadID, (err) => {
 							if (err) console.error("[reactBy.kick]", err?.message || err);
@@ -197,11 +168,6 @@ module.exports = (
 				case "read_receipt":
 					safeCall("read_receipt", read_receipt);
 					break;
-
-				// case "friend_request_received":
-				// 	break;
-				// case "friend_request_cancel":
-				// 	break;
 
 				default:
 					break;
