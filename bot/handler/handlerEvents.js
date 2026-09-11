@@ -5,7 +5,7 @@
  *
  * --------------------------------------------------------------------------
  * handlerEvents enhanced by Maruf — bug fixes, memory safety, regex escape,
- * mutation guards, timeout, and better error isolation.
+ * mutation guards, timeout, non-blocking data load, error isolation.
  * Original author credit preserved as required by MIT license.
  *
  * ⚠️ IMPORTANT: This file must NOT require itself (no `require("./handlerEvents.js")`).
@@ -229,25 +229,48 @@ module.exports = function (
 
 		const senderID = sid(event.userID || event.senderID || event.author);
 
-		// ————————— LOAD DATA ————————— //
+		// ————————— LOAD DATA (NON-BLOCKING) ————————— //
+		// Get from cache first
 		let threadData = global.db.allThreadData.find(t => String(t.threadID) === String(threadID));
 		let userData = global.db.allUserData.find(u => String(u.userID) === String(senderID));
 
+		// If not in cache → use placeholder immediately.
+		// Real creation runs in background (handlerCheckData.js).
+		// ⚠️ NEVER await Facebook API here — it blocks messages for 45s.
 		if (!userData && senderID && !isNaN(Number(senderID))) {
-			userData = await usersData.create(senderID);
+			userData = {
+				userID: senderID,
+				name: event.senderName || "Facebook User",
+				data: {},
+				banned: { status: false, reason: null, date: null },
+				settings: {},
+				__placeholder: true
+			};
 		}
 
 		if (!threadData && threadID && !isNaN(Number(threadID))) {
-			const errorList = global.temp.createThreadDataError || [];
-			if (errorList.includes(threadID)) return;
-			threadData = await threadsData.create(threadID);
+			threadData = {
+				threadID: String(threadID),
+				threadName: event.threadName || "Unknown Group",
+				adminIDs: Array.isArray(event.adminIDs) ? event.adminIDs.map(String) : [],
+				members: Array.isArray(event.participantIDs)
+					? event.participantIDs.map(id => ({ userID: String(id), inGroup: true }))
+					: [],
+				data: {},
+				banned: { status: false, reason: null, date: null },
+				settings: {},
+				__placeholder: true
+			};
 			global.db.receivedTheFirstMessage[threadID] = Date.now();
 		} else if (
+			threadData &&
+			!threadData.__placeholder &&
 			autoRefreshThreadInfoFirstTime === true &&
 			!global.db.receivedTheFirstMessage[threadID]
 		) {
 			global.db.receivedTheFirstMessage[threadID] = Date.now();
-			await threadsData.refreshInfo(threadID);
+			// Fire-and-forget — never await
+			threadsData.refreshInfo(threadID).catch(() => {});
 		}
 
 		if (typeof threadData?.settings?.hideNotiMessage === "object")
