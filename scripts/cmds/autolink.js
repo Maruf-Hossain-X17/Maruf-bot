@@ -314,7 +314,7 @@ module.exports = {
         name: "autodl",
         aliases: ["alldl", "autolink"],
         version: "3.0.0",
-        author: "gemini",
+        author: "Maruf",
         countDown: 0,
         role: 0,
         description: {
