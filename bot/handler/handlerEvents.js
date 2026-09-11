@@ -7,6 +7,9 @@
  * handlerEvents enhanced by Maruf — bug fixes, memory safety, regex escape,
  * mutation guards, timeout, and better error isolation.
  * Original author credit preserved as required by MIT license.
+ *
+ * ⚠️ IMPORTANT: This file must NOT require itself (no `require("./handlerEvents.js")`).
+ *    Doing so causes infinite recursion → RangeError: Maximum call stack size exceeded.
  * --------------------------------------------------------------------------
  */
 
@@ -16,7 +19,6 @@ const nullAndUndefined = [undefined, null];
 // ————— constants —————
 const COUNTDOWN_CLEANUP_INTERVAL = 10 * 60_000; // 10 min
 const RECEIVED_MESSAGE_TTL_MS = 6 * 60 * 60_000; // 6 hours
-const COMMAND_TIMEOUT_MS = 5 * 60_000; // 5 min per command
 
 function getType(obj) {
 	return Object.prototype.toString.call(obj).slice(8, -1);
@@ -173,7 +175,6 @@ function startCleanups() {
 	global.__handlerEventsCleanupStarted = true;
 
 	setInterval(() => {
-		// countdown cleanup
 		try {
 			const cd = global.client?.countDown || {};
 			const now = Date.now();
@@ -187,12 +188,10 @@ function startCleanups() {
 			}
 		} catch (_) {}
 
-		// receivedTheFirstMessage cleanup
 		try {
 			const r = global.db?.receivedTheFirstMessage || {};
 			const now = Date.now();
 			for (const tid in r) {
-				// if value is a number (timestamp), expire after TTL
 				if (typeof r[tid] === "number" && now - r[tid] > RECEIVED_MESSAGE_TTL_MS) {
 					delete r[tid];
 				}
@@ -201,6 +200,9 @@ function startCleanups() {
 	}, COUNTDOWN_CLEANUP_INTERVAL).unref?.();
 }
 
+// ============================================================
+// ⬇️⬇️⬇️ MAIN EXPORT — NO SELF-REQUIRE BELOW THIS LINE ⬇️⬇️⬇️
+// ============================================================
 module.exports = function (
 	api,
 	threadModel,
@@ -212,9 +214,8 @@ module.exports = function (
 	dashBoardData,
 	globalData
 ) {
-	const handlerEvents = require(
-		process.env.NODE_ENV === "development" ? "./handlerEvents.dev.js" : "./handlerEvents.js"
-	)(api, threadModel, userModel, dashBoardModel, globalModel, usersData, threadsData, dashBoardData, globalData);
+	// ⚠️ এখানে কোনো `require("./handlerEvents.js")` থাকা যাবে না!
+
 	return async function (event, message) {
 		const { utils, client, GoatBot } = global;
 		const { getPrefix, removeHomeDir, log, getTime } = utils;
@@ -330,7 +331,6 @@ module.exports = function (
 				GoatBot.commands.get(commandName) ||
 				GoatBot.commands.get(GoatBot.aliases.get(commandName));
 
-			// aliases set by group
 			const aliasesData = threadData?.data?.aliases || {};
 			for (const cmdName in aliasesData) {
 				const list = Array.isArray(aliasesData[cmdName]) ? aliasesData[cmdName] : [];
@@ -342,11 +342,9 @@ module.exports = function (
 
 			if (command?.config?.name) commandName = command.config.name;
 
-			// ——— banned / admin check ——— //
 			if (isBannedOrOnlyAdmin(userData, threadData, senderID, threadID, isGroup, commandName, message, langCode))
 				return;
 
-			// ——— command not found ——— //
 			if (!command || typeof command.onStart !== "function") {
 				if (!hideNotiMessage.commandNotFound) {
 					return await message.reply(
@@ -358,7 +356,6 @@ module.exports = function (
 				return true;
 			}
 
-			// ——— permission ——— //
 			const roleConfig = getRoleConfig(utils, command, isGroup, threadData, commandName);
 			const needRole = roleConfig.onStart;
 			if (needRole > role) {
@@ -370,7 +367,6 @@ module.exports = function (
 				} else return true;
 			}
 
-			// ——— cooldown ——— //
 			if (!client.countDown[commandName]) client.countDown[commandName] = {};
 			const timestamps = client.countDown[commandName];
 			let getCoolDown = command.config.countDown;
@@ -385,12 +381,10 @@ module.exports = function (
 					);
 			}
 
-			// ——— run ——— //
 			const time = getTime("DD/MM/YYYY HH:mm:ss");
 			isUserCallCommand = true;
 
 			try {
-				// analytics (fire and forget, but catch errors)
 				(async () => {
 					try {
 						const analytics = await globalData.get("analytics", "data", {});
@@ -531,7 +525,6 @@ module.exports = function (
 				const command = GoatBot.commands.get(commandName);
 				if (!command || typeof command.onFirstChat !== "function") continue;
 
-				// mark AFTER successful run (fix premature marking)
 				const getText2 = createGetText2(langCode, `${process.cwd()}/languages/cmds/${langCode}.js`, prefix, command);
 				const time = getTime("DD/MM/YYYY HH:mm:ss");
 				message.SyntaxError = makeSyntaxError(commandName);
@@ -577,7 +570,6 @@ module.exports = function (
 			const Reply = onReply.get(originalMsgID);
 			if (!Reply) return;
 
-			// FIX: delete original entry, not the reply's messageID
 			Reply.delete = () => onReply.delete(originalMsgID);
 
 			const commandName = Reply.commandName;
