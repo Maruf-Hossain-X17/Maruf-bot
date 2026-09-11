@@ -144,7 +144,7 @@ module.exports = {
   config: {
     name: "quran",
     version: "3.0",
-    author: "ChatGPT",
+    author: "Maruf",
     role: 0,
     shortDescription: "কুরআন পড়ুন, শুনুন ও বিস্তারিত তথ্য জানুন",
     category: "islam",
