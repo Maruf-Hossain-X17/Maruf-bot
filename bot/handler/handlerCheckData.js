@@ -1,26 +1,18 @@
 /**
  * @author NTKhang
- * ! The source code is written by NTKhang, please don't change the author's name everywhere. Thank you for using
- * ! Official source code: https://github.com/ntkhang03/Goat-Bot-V2
- *
- * --------------------------------------------------------------------------
- * handlerCheckData enhanced by Maruf — fully non-blocking, no unhandled rejection
- * Original author credit preserved as required by MIT license.
- * --------------------------------------------------------------------------
+ * Enhanced by Maruf — logs real errors, no unhandled rejection
  */
 
 const { db, utils, GoatBot } = global;
 const { config } = GoatBot;
-const { log, getText } = utils;
+const { log } = utils;
 const { creatingThreadData, creatingUserData } = global.client.database;
 
-// ————— tuning —————
-const CREATE_TIMEOUT_MS = 45_000;        // ⬆️ 15s → 45s (FB API slow, patience দরকার)
-const RETRY_AFTER_MS = 60_000;            // fail হলে ৬০ সেকেন্ড পর retry
+const CREATE_TIMEOUT_MS = 60_000;
+const RETRY_AFTER_MS = 120_000;
 const ERROR_CACHE_MAX = 5_000;
 
-const errorCache = new Map(); // id -> timestamp
-const retryQueue = new Map(); // id -> timer
+const errorCache = new Map();
 
 function markError(id) {
 	errorCache.set(String(id), Date.now());
@@ -50,15 +42,12 @@ function withTimeout(promise, ms, label) {
 	]);
 }
 
-// ————— NON-BLOCKING thread ensure —————
+// ————— thread —————
 function ensureThreadBackground(threadsData, threadID, event) {
 	if (hasRecentError(threadID)) return;
 	if (db.allThreadData.some((t) => String(t.threadID) === String(threadID))) return;
+	if (creatingThreadData.some((t) => String(t.threadID) === String(threadID))) return;
 
-	const existing = creatingThreadData.find((t) => String(t.threadID) === String(threadID));
-	if (existing) return;
-
-	// Build info from event so we don't need FB API call
 	const eventInfo = event ? {
 		threadName: event.threadName || undefined,
 		isGroup: event.isGroup,
@@ -71,7 +60,6 @@ function ensureThreadBackground(threadsData, threadID, event) {
 
 	let resolveLock;
 	const lockPromise = new Promise((res) => { resolveLock = res; });
-	// FIX: attach catch to prevent unhandled rejection
 	lockPromise.catch(() => {});
 
 	const entry = { threadID, promise: lockPromise };
@@ -94,18 +82,18 @@ function ensureThreadBackground(threadsData, threadID, event) {
 				resolveLock();
 				return;
 			}
-			// Silent error — non-critical, retry later
 			markError(threadID);
-			// only log once per thread per 60s
-			if (!retryQueue.has(String(threadID))) {
-				log.warn?.("DATABASE", `Thread ${threadID} create failed — will retry in 60s`);
-				const timer = setTimeout(() => {
-					retryQueue.delete(String(threadID));
-					errorCache.delete(String(threadID));
-				}, RETRY_AFTER_MS);
-				if (timer.unref) timer.unref();
-				retryQueue.set(String(threadID), timer);
-			}
+			// ✅ LOG THE REAL ERROR
+			log.err(
+				"DATABASE",
+				`Thread ${threadID} create failed: ${err?.name || "Error"}: ${err?.message || err}`
+			);
+			console.error("[DB THREAD ERROR]", {
+				threadID,
+				name: err?.name,
+				message: err?.message,
+				stack: (err?.stack || "").split("\n").slice(0, 3).join("\n")
+			});
 			resolveLock(null);
 		} finally {
 			const idx = creatingThreadData.indexOf(entry);
@@ -114,23 +102,19 @@ function ensureThreadBackground(threadsData, threadID, event) {
 	})();
 }
 
-// ————— NON-BLOCKING user ensure —————
+// ————— user —————
 function ensureUserBackground(usersData, senderID, event) {
 	if (hasRecentError(senderID)) return;
 	if (db.allUserData.some((u) => String(u.userID) === String(senderID))) return;
+	if (creatingUserData.some((u) => String(u.userID) === String(senderID))) return;
 
-	const existing = creatingUserData.find((u) => String(u.userID) === String(senderID));
-	if (existing) return;
-
-	// Info from event (avoid FB API call)
 	const eventInfo = event ? {
-		name: event.senderName || undefined,
-		gender: undefined
+		name: event.senderName || undefined
 	} : undefined;
 
 	let resolveLock;
 	const lockPromise = new Promise((res) => { resolveLock = res; });
-	lockPromise.catch(() => {}); // prevent unhandled rejection
+	lockPromise.catch(() => {});
 
 	const entry = { userID: senderID, promise: lockPromise };
 	creatingUserData.push(entry);
@@ -153,15 +137,16 @@ function ensureUserBackground(usersData, senderID, event) {
 				return;
 			}
 			markError(senderID);
-			if (!retryQueue.has(String(senderID))) {
-				log.warn?.("DATABASE", `User ${senderID} create failed — will retry in 60s`);
-				const timer = setTimeout(() => {
-					retryQueue.delete(String(senderID));
-					errorCache.delete(String(senderID));
-				}, RETRY_AFTER_MS);
-				if (timer.unref) timer.unref();
-				retryQueue.set(String(senderID), timer);
-			}
+			log.err(
+				"DATABASE",
+				`User ${senderID} create failed: ${err?.name || "Error"}: ${err?.message || err}`
+			);
+			console.error("[DB USER ERROR]", {
+				senderID,
+				name: err?.name,
+				message: err?.message,
+				stack: (err?.stack || "").split("\n").slice(0, 3).join("\n")
+			});
 			resolveLock(null);
 		} finally {
 			const idx = creatingUserData.indexOf(entry);
@@ -170,26 +155,21 @@ function ensureUserBackground(usersData, senderID, event) {
 	})();
 }
 
-// ————— MAIN —————
+// ————— main —————
 module.exports = async function (usersData, threadsData, event) {
 	if (!event || typeof event !== "object") return;
-
 	const { threadID } = event;
 	const senderID = event.senderID || event.author || event.userID;
 
-	// Fire-and-forget — no await, no blocking, no unhandled rejection
 	if (isValidId(threadID)) {
-		try { ensureThreadBackground(threadsData, threadID, event); } catch (_) {}
+		try { ensureThreadBackground(threadsData, threadID, event); } catch (e) { console.error("[CHECK THREAD]", e.message); }
 	}
-
 	if (isValidId(senderID)) {
-		try { ensureUserBackground(usersData, senderID, event); } catch (_) {}
+		try { ensureUserBackground(usersData, senderID, event); } catch (e) { console.error("[CHECK USER]", e.message); }
 	}
-
 	return;
 };
 
-// ————— debug helpers —————
 module.exports.resetErrorCache = (id) => {
 	if (id === undefined) errorCache.clear();
 	else errorCache.delete(String(id));
