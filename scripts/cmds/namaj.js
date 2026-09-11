@@ -4,7 +4,7 @@ module.exports = {
   config: {
     name: "namaj",
     version: "1.0",
-    author: "ULLASH + GPT-5",
+    author: "Maruf",
     role: 0, // সবাই ব্যবহার করতে পারবে
     shortDescription: "Show prayer times for a city",
     longDescription: "Get Islamic prayer times for a specific city using free API",
