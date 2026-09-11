@@ -60,7 +60,7 @@
     "type": "sqlite",
     "uriMongodb": "",
     "autoSyncWhenStart": false,
-    "autoRefreshThreadInfoFirstTime": true
+    "autoRefreshThreadInfoFirstTime": false
   },
   "timeZone": "Asia/Dhaka",
   "credentials": {
