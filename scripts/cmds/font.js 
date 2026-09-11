@@ -1,0 +1,69 @@
+module.exports = {
+  config: {
+    name: "font",
+    version: "3.6",
+    author: "Aryan Chauhan (fixed by ChatGPT)",
+    countDown: 2,
+    role: 0,
+    shortDescription: "Transform text into cool fonts",
+    category: "text",
+    guide: "{pn} [type] [text]"
+  },
+
+  onStart: async ({ message, args }) => {
+
+    const fontMaps = [
+      {
+        name: "bold",
+        map: {
+          a:"𝗮",b:"𝗯",c:"𝗰",d:"𝗱",e:"𝗲",f:"𝗳",g:"𝗴",h:"𝗵",i:"𝗶",j:"𝗷",k:"𝗸",l:"𝗹",
+          m:"𝗺",n:"𝗻",o:"𝗼",p:"𝗽",q:"𝗾",r:"𝗿",s:"𝘀",t:"𝘁",u:"𝘂",v:"𝘃",w:"𝘄",
+          x:"𝘅",y:"𝘆",z:"𝘇",
+          A:"𝗔",B:"𝗕",C:"𝗖",D:"𝗗",E:"𝗘",F:"𝗙",G:"𝗚",H:"𝗛",I:"𝗜",J:"𝗝",K:"𝗞",
+          L:"𝗟",M:"𝗠",N:"𝗡",O:"𝗢",P:"𝗣",Q:"𝗤",R:"𝗥",S:"𝗦",T:"𝗧",U:"𝗨",V:"𝗩",
+          W:"𝗪",X:"𝗫",Y:"𝗬",Z:"𝗭"
+        }
+      },
+      {
+        name: "cursive",
+        map: {
+          a:"𝓪",b:"𝓫",c:"𝓬",d:"𝓭",e:"𝓮",f:"𝓯",g:"𝓰",h:"𝓱",i:"𝓲",j:"𝓳",k:"𝓴",
+          l:"𝓵",m:"𝓶",n:"𝓷",o:"𝓸",p:"𝓹",q:"𝓺",r:"𝓻",s:"𝓼",t:"𝓽",u:"𝓾",
+          v:"𝓿",w:"𝔀",x:"𝔁",y:"𝔂",z:"𝔃",
+          A:"𝓐",B:"𝓑",C:"𝓒",D:"𝓓",E:"𝓔",F:"𝓕",G:"𝓖",H:"𝓗",I:"𝓘",J:"𝓙",
+          K:"𝓚",L:"𝓛",M:"𝓜",N:"𝓝",O:"𝓞",P:"𝓟",Q:"𝓠",R:"𝓡",S:"𝓢",T:"𝓣",
+          U:"𝓤",V:"𝓥",W:"𝓦",X:"𝓧",Y:"𝓨",Z:"𝓩"
+        }
+      },
+      {
+        name: "mono",
+        map: {
+          a:"𝚊",b:"𝚋",c:"𝚌",d:"𝚍",e:"𝚎",f:"𝚏",g:"𝚐",h:"𝚑",i:"𝚒",j:"𝚓",
+          k:"𝚔",l:"𝚕",m:"𝚖",n:"𝚗",o:"𝚘",p:"𝚙",q:"𝚚",r:"𝚛",s:"𝚜",t:"𝚝",
+          u:"𝚞",v:"𝚟",w:"𝚠",x:"𝚡",y:"𝚢",z:"𝚣",
+          A:"𝙰",B:"𝙱",C:"𝙲",D:"𝙳",E:"𝙴",F:"𝙵",G:"𝙶",H:"𝙷",I:"𝙸",J:"𝙹",
+          K:"𝙺",L:"𝙻",M:"𝙼",N:"𝙽",O:"𝙾",P:"𝙿",Q:"𝚀",R:"𝚁",S:"𝚂",T:"𝚃",
+          U:"𝚄",V:"𝚅",W:"𝚆",X:"𝚇",Y:"𝚈",Z:"𝚉"
+        }
+      }
+    ];
+
+    if (!args[0] || args[0].toLowerCase() === "list") {
+      const list = fontMaps.map(f => `• ${f.name}`).join("\n");
+      return message.reply(
+        `📜 Available Fonts:\n\n${list}\n\nExample:\n.font bold Hello World`
+      );
+    }
+
+    const type = args.shift().toLowerCase();
+    const text = args.join(" ");
+
+    if (!text) return message.reply("⚠️ | Please enter some text!");
+
+    const font = fontMaps.find(f => f.name === type);
+    if (!font) return message.reply("❌ | Font style not found!");
+
+    const output = [...text].map(c => font.map[c] || c).join("");
+    return message.reply(output);
+  }
+};

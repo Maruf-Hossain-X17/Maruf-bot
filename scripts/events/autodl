@@ -1,0 +1,92 @@
+const axios = require("axios");
+const fs = require("fs");
+const path = require("path");
+
+module.exports = {
+  config: {
+    name: "autodl",
+    eventType: ["message"], // ✅ নতুন মেসেজে ট্রিগার হবে
+    version: "2.0",
+    author: "Nyx",
+    category: "auto",
+    description: "Automatically download videos when someone sends a supported link"
+  },
+
+  onStart: async function () {},
+
+  onEvent: async function ({ event, message, api }) {
+    try {
+      const text = event.body || "";
+      if (!text) return;
+
+      // ✅ Supported platforms
+      const supportedPlatforms = [
+        "https://vt.tiktok.com",
+        "https://vm.tiktok.com",
+        "https://www.tiktok.com/",
+        "https://www.facebook.com",
+        "https://fb.watch",
+        "https://www.instagram.com/",
+        "https://www.instagram.com/p/",
+        "https://x.com/",
+        "https://twitter.com/",
+        "https://pin.it/",
+        "https://www.youtube.com/",
+        "https://youtu.be/"
+      ];
+
+      // Check if message contains a supported URL
+      const url = supportedPlatforms.find(prefix => text.includes(prefix));
+      if (!url) return;
+
+      // Inform user
+      const loadingMessage = await message.reply("📥 Video detected! Downloading... Please wait.");
+
+      // Call API
+      const { data } = await axios.get(
+        `https://www.x-noobs-apis.42web.io/m/alldl?url=${encodeURIComponent(text)}`
+      );
+
+      if (!data?.status || !data?.url) {
+        return message.reply("❌ Failed to fetch video download link.");
+      }
+
+      const filePath = path.join(__dirname, `video_${Date.now()}.mp4`);
+
+      // Download video
+      const videoStream = await axios({
+        url: data.url,
+        responseType: "stream"
+      });
+
+      await new Promise((resolve, reject) => {
+        const writer = fs.createWriteStream(filePath);
+        videoStream.data.pipe(writer);
+        writer.on("finish", resolve);
+        writer.on("error", reject);
+      });
+
+      // Send video
+      await message.reply({
+        body: `✅ Auto-downloaded video!\n\n🌐 Source: ${text}`,
+        attachment: fs.createReadStream(filePath)
+      });
+
+      // Clean file
+      fs.unlink(filePath, err => {
+        if (err && err.code !== "ENOENT") {
+          console.error("Temp file deletion failed:", err);
+        }
+      });
+
+      // Remove loading msg
+      if (loadingMessage?.messageID) {
+        await api.unsendMessage(loadingMessage.messageID).catch(() => {});
+      }
+
+    } catch (e) {
+      console.error("AutoDL Error:", e);
+      message.reply("⚠️ Failed to auto-download the video.");
+    }
+  }
+};

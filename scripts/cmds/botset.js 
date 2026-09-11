@@ -1,0 +1,80 @@
+const fs = require('fs-extra');
+const path = require('path');
+
+const pathFile = path.join(__dirname, 'cache', 'botStatus.json');
+
+module.exports = {
+  config: {
+    name: "botset",
+    version: "2.0.0",
+    author: "Gemini",
+    countDown: 5,
+    role: 2, // Shudhu Admin bebohar korte parbe
+    shortDescription: "Bot on/off control via list",
+    longDescription: "Reply to the list with index to turn bot on/off in specific groups",
+    category: "system",
+    guide: "{pn}"
+  },
+
+  onStart: async function ({ api, event, threadsData }) {
+    if (!fs.existsSync(pathFile)) fs.writeJsonSync(pathFile, {});
+    
+    const allThreads = await threadsData.getAll();
+    let msg = "--- Group Bot Control List ---\n\n";
+    let listArr = [];
+
+    allThreads.forEach((thread, index) => {
+      const statusData = fs.readJsonSync(pathFile);
+      const status = statusData[thread.threadID] === false ? "OFF" : "ON";
+      msg += `${index + 1}. ${thread.threadName || 'Unknown Group'}\nStatus: [${status}]\n\n`;
+      listArr.push(thread.threadID);
+    });
+
+    msg += "👉 Reply korun group number diye (e.g., '1') bot ON/OFF korte.";
+
+    return api.sendMessage(msg, event.threadID, (err, info) => {
+      global.GoatBot.onReply.set(info.messageID, {
+        commandName: this.config.name,
+        messageID: info.messageID,
+        author: event.senderID,
+        listArr
+      });
+    }, event.messageID);
+  },
+
+  onReply: async function ({ api, event, Reply, threadsData }) {
+    const { author, listArr } = Reply;
+    if (event.senderID !== author) return;
+
+    const index = parseInt(event.body) - 1;
+    if (isNaN(index) || index < 0 || index >= listArr.length) {
+      return api.sendMessage("Invalid number! Sothik number reply korun.", event.threadID);
+    }
+
+    const targetID = listArr[index];
+    const statusData = fs.readJsonSync(pathFile);
+    
+    // Toggle status
+    const currentStatus = statusData[targetID] === false ? false : true;
+    const newStatus = !currentStatus;
+    statusData[targetID] = newStatus;
+
+    fs.writeJsonSync(pathFile, statusData);
+
+    const threadInfo = await threadsData.get(targetID);
+    const mode = newStatus ? "ON" : "OFF";
+    
+    return api.sendMessage(`✅ Group: ${threadInfo.threadName}\nBot ekhon: ${mode}`, event.threadID);
+  },
+
+  // Ei part-ti bot-ke message receive korte badha dibe jodi status OFF thake
+  onChat: async function ({ event }) {
+    if (!fs.existsSync(pathFile)) return;
+    const statusData = fs.readJsonSync(pathFile);
+    
+    if (statusData[event.threadID] === false) {
+      // Bot ei group-e OFF thakle kono response korbe na
+      return; 
+    }
+  }
+};

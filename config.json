@@ -1,0 +1,213 @@
+{
+  "facebookAccount": {
+    "email": "mlbl7202@gmail.com",
+    "password": "Ma1bl2f3@",
+    "2FASecret": "I2ZGCVTIVF6TKGPHQWVMMK34YVR2DYES",
+    "i_user": "",
+    "proxy": null,
+    "userAgent": "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/137.0.0.0 Mobile Safari/537.36",
+    "intervalGetNewCookie": 1440
+  },
+  "antiInbox": false,
+  "language": "en",
+  "nickNameBot": "itachi",
+  "prefix": "+",
+  "usePrefix": {
+    "enable": true,
+    "adminUsePrefix": {
+      "enable": true,
+      "specificUids": []
+    }
+  },
+  "approval": false,
+  "reactBy": {
+    "delete": [
+      "😡",
+      "😾"
+    ],
+    "kick": [
+      "😡",
+      "⚠️"
+    ]
+  },
+  "adminOnly": {
+    "enable": false,
+    "ignoreCommand": []
+  },
+  "adminBot": [
+    "100066542686904",
+    "61570727252463",
+    "61556572161122",
+    "100071457007723"
+  ],
+  "mainAdmin": [
+    "100066542686904"
+  ],
+  "whiteListMode": {
+    "enable": false,
+    "whiteListIds": [
+      "100066542686904",
+      "61556572161122"
+    ]
+  },
+  "whiteListModeThread": {
+    "enable": false,
+    "whiteListThreadIds": [
+      "23900759299610016"
+    ]
+  },
+  "database": {
+    "type": "sqlite",
+    "uriMongodb": "",
+    "autoSyncWhenStart": false,
+    "autoRefreshThreadInfoFirstTime": true
+  },
+  "timeZone": "Asia/Dhaka",
+  "credentials": {
+    "gmailAccount": {
+      "email": "mymaruf94@gmail.com",
+      "clientId": "653155933669-v2fb0d9mp0n33qjii6bmohklfnvgbp3d.apps.googleusercontent.com",
+      "clientSecret": "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",
+      "refreshToken": "1//04nahBVNkK8X5CgYIARAAGAQSNwF-L9IrJ553uhsmXE0GBdKKAFaY8UpkSn7bBmZPQq65_VP3p2bdRNMxgZaCZG_kvDNaMUR4J7I",
+      "apiKey": ""
+    },
+    "gRecaptcha": {
+      "siteKey": "6Ldx9lUsAAAAABT1qlIgt2gnPomJIwSaxkBgJloU",
+      "secretKey": "6Ldx9lUsAAAAAEfqaNk1ZPYt2GK_Y93uDflSBgvW"
+    }
+  },
+  "dashBoard": {
+    "enable": true,
+    "expireVerifyCode": 300000,
+    "port": 3001,
+    "passwordProtection": {
+      "enable": false,
+      "password": ""
+    }
+  },
+  "serverUptime": {
+    "enable": false,
+    "port": 3001,
+    "socket": {
+      "enable": true,
+      "channelName": "uptime",
+      "verifyToken": "stbotkey"
+    }
+  },
+  "autoRestart": {
+    "time": null,
+    "logNoti": false
+  },
+  "autoUptime": {
+    "enable": false,
+    "timeInterval": 180,
+    "url": ""
+  },
+  "autoLoadScripts": {
+    "enable": false,
+    "ignoreCmds": "",
+    "ignoreEvents": ""
+  },
+  "autoRefreshFbstate": true,
+  "autoReloginWhenChangeAccount": false,
+  "autoRestartWhenListenMqttError": true,
+  "restartListenMqtt": {
+    "enable": true,
+    "timeRestart": 7200000,
+    "delayAfterStopListening": 2000,
+    "logNoti": true
+  },
+  "notiWhenListenMqttError": {
+    "gmail": {
+      "enable": false,
+      "emailGetNoti": ""
+    },
+    "telegram": {
+      "enable": false,
+      "botToken": "",
+      "chatId": ""
+    },
+    "discordHook": {
+      "enable": false,
+      "webhookUrl": ""
+    }
+  },
+  "botStartupNotification": {
+    "enable": true,
+    "sendToThreads": {
+      "enable": true,
+      "threadIds": [
+        "1553614942527332"
+      ]
+    },
+    "message": "⚔️ Itachi Bot is now Online! Darkness has arrived."
+  },
+  "threadApproval": {
+    "enable": false,
+    "adminNotificationThreads": [],
+    "autoApproveExisting": true,
+    "sendNotifications": true,
+    "sendThreadMessage": true,
+    "autoApprovedThreads": []
+  },
+  "botLogging": {
+    "enable": false,
+    "sendToThreads": true,
+    "logThreadIds": [],
+    "sendToAdmins": false,
+    "silentOnDisabledThreads": true,
+    "logBotAdded": false,
+    "logBotKicked": true
+  },
+  "githubIntegration": {
+    "enable": false,
+    "repoOwner": "",
+    "repoName": "",
+    "token": "",
+    "branch": "main",
+    "autoCommit": true,
+    "autoSyncOnUpdate": true,
+    "commitMessage": "Auto-sync: {action} - {timestamp}",
+    "excludeFiles": [
+      "account.txt",
+      "account.txt2",
+      "node_modules",
+      ".git",
+      "backups",
+      ".replit",
+      "replit.nix",
+      "database/data"
+    ]
+  },
+  "hideNotiMessage": {
+    "commandNotFound": false,
+    "adminOnly": false,
+    "threadBanned": false,
+    "userBanned": false,
+    "needRoleToUseCmd": false,
+    "needRoleToUseCmdOnReply": false,
+    "needRoleToUseCmdOnReaction": false
+  },
+  "logEvents": {
+    "disableAll": false,
+    "message": true,
+    "message_reaction": true,
+    "message_unsend": true,
+    "message_reply": true,
+    "event": true,
+    "read_receipt": false,
+    "typ": false,
+    "presence": false
+  },
+  "optionsFca": {
+    "forceLogin": true,
+    "listenEvents": true,
+    "updatePresence": true,
+    "listenTyping": false,
+    "logLevel": "error",
+    "selfListen": false,
+    "selfListenEvent": false,
+    "autoMarkDelivery": false,
+    "autoReconnect": true
+  }
+}
