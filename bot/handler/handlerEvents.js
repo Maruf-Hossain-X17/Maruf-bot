@@ -4,12 +4,9 @@
  * ! Official source code: https://github.com/ntkhang03/Goat-Bot-V2
  *
  * --------------------------------------------------------------------------
- * handlerEvents enhanced by Maruf — bug fixes, memory safety, regex escape,
- * mutation guards, timeout, non-blocking data load, error isolation.
+ * handlerEvents enhanced by Maruf — non-blocking data load, placeholder safety,
+ * regex escape, no self-require, error isolation.
  * Original author credit preserved as required by MIT license.
- *
- * ⚠️ IMPORTANT: This file must NOT require itself (no `require("./handlerEvents.js")`).
- *    Doing so causes infinite recursion → RangeError: Maximum call stack size exceeded.
  * --------------------------------------------------------------------------
  */
 
@@ -17,22 +14,59 @@ const fs = require("fs-extra");
 const nullAndUndefined = [undefined, null];
 
 // ————— constants —————
-const COUNTDOWN_CLEANUP_INTERVAL = 10 * 60_000; // 10 min
-const RECEIVED_MESSAGE_TTL_MS = 6 * 60 * 60_000; // 6 hours
+const COUNTDOWN_CLEANUP_INTERVAL = 10 * 60_000;
+const RECEIVED_MESSAGE_TTL_MS = 6 * 60 * 60_000;
 
 function getType(obj) {
 	return Object.prototype.toString.call(obj).slice(8, -1);
 }
 
-// ————— regex escape helper —————
 function escapeRegex(str = "") {
 	return String(str).replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 }
 
-// ————— safe string id —————
 function sid(v) {
 	if (v === undefined || v === null || v === "") return null;
 	return String(v);
+}
+
+// ————— default placeholder shapes —————
+function makePlaceholderUser(senderID, name) {
+	return {
+		userID: senderID,
+		name: name || "Facebook User",
+		data: {
+			exp: 0,
+			money: 0,
+			level: 0,
+			rank: 0,
+			banned: { status: false, reason: null, date: null }
+		},
+		banned: { status: false, reason: null, date: null },
+		settings: {},
+		__placeholder: true
+	};
+}
+
+function makePlaceholderThread(threadID, event) {
+	return {
+		threadID: String(threadID),
+		threadName: event.threadName || "Unknown Group",
+		adminIDs: Array.isArray(event.adminIDs) ? event.adminIDs.map(String) : [],
+		members: Array.isArray(event.participantIDs)
+			? event.participantIDs.map(id => ({ userID: String(id), inGroup: true }))
+			: [],
+		data: {
+			lang: undefined,
+			aliases: {},
+			setRole: {},
+			onlyAdminBox: false,
+			ignoreCommanToOnlyAdminBox: []
+		},
+		banned: { status: false, reason: null, date: null },
+		settings: {},
+		__placeholder: true
+	};
 }
 
 // ————— role —————
@@ -92,7 +126,6 @@ function isBannedOrOnlyAdmin(userData, threadData, senderID, threadID, isGroup, 
 	const uid = sid(senderID);
 	const { hideNotiMessage = {} } = config;
 
-	// user banned
 	if (userData?.banned?.status === true) {
 		const { reason, date } = userData.banned;
 		if (hideNotiMessage.userBanned === false)
@@ -100,7 +133,6 @@ function isBannedOrOnlyAdmin(userData, threadData, senderID, threadID, isGroup, 
 		return true;
 	}
 
-	// only admin bot
 	const adminOnly = config.adminOnly || {};
 	const ignoreList = Array.isArray(adminOnly.ignoreCommand) ? adminOnly.ignoreCommand : [];
 	if (adminOnly.enable === true && !adminBot.includes(uid) && !ignoreList.includes(commandName)) {
@@ -109,7 +141,6 @@ function isBannedOrOnlyAdmin(userData, threadData, senderID, threadID, isGroup, 
 		return true;
 	}
 
-	// group-only checks
 	if (isGroup === true && threadData) {
 		const adminIDs = (threadData.adminIDs || []).map(String);
 		const ignoreBox = Array.isArray(threadData.data?.ignoreCommanToOnlyAdminBox)
@@ -201,7 +232,7 @@ function startCleanups() {
 }
 
 // ============================================================
-// ⬇️⬇️⬇️ MAIN EXPORT — NO SELF-REQUIRE BELOW THIS LINE ⬇️⬇️⬇️
+// MAIN EXPORT — NO SELF-REQUIRE
 // ============================================================
 module.exports = function (
 	api,
@@ -214,8 +245,6 @@ module.exports = function (
 	dashBoardData,
 	globalData
 ) {
-	// ⚠️ এখানে কোনো `require("./handlerEvents.js")` থাকা যাবে না!
-
 	return async function (event, message) {
 		const { utils, client, GoatBot } = global;
 		const { getPrefix, removeHomeDir, log, getTime } = utils;
@@ -229,38 +258,16 @@ module.exports = function (
 
 		const senderID = sid(event.userID || event.senderID || event.author);
 
-		// ————————— LOAD DATA (NON-BLOCKING) ————————— //
-		// Get from cache first
+		// ————————— NON-BLOCKING LOAD DATA ————————— //
 		let threadData = global.db.allThreadData.find(t => String(t.threadID) === String(threadID));
 		let userData = global.db.allUserData.find(u => String(u.userID) === String(senderID));
 
-		// If not in cache → use placeholder immediately.
-		// Real creation runs in background (handlerCheckData.js).
-		// ⚠️ NEVER await Facebook API here — it blocks messages for 45s.
 		if (!userData && senderID && !isNaN(Number(senderID))) {
-			userData = {
-				userID: senderID,
-				name: event.senderName || "Facebook User",
-				data: {},
-				banned: { status: false, reason: null, date: null },
-				settings: {},
-				__placeholder: true
-			};
+			userData = makePlaceholderUser(senderID, event.senderName);
 		}
 
 		if (!threadData && threadID && !isNaN(Number(threadID))) {
-			threadData = {
-				threadID: String(threadID),
-				threadName: event.threadName || "Unknown Group",
-				adminIDs: Array.isArray(event.adminIDs) ? event.adminIDs.map(String) : [],
-				members: Array.isArray(event.participantIDs)
-					? event.participantIDs.map(id => ({ userID: String(id), inGroup: true }))
-					: [],
-				data: {},
-				banned: { status: false, reason: null, date: null },
-				settings: {},
-				__placeholder: true
-			};
+			threadData = makePlaceholderThread(threadID, event);
 			global.db.receivedTheFirstMessage[threadID] = Date.now();
 		} else if (
 			threadData &&
@@ -269,7 +276,6 @@ module.exports = function (
 			!global.db.receivedTheFirstMessage[threadID]
 		) {
 			global.db.receivedTheFirstMessage[threadID] = Date.now();
-			// Fire-and-forget — never await
 			threadsData.refreshInfo(threadID).catch(() => {});
 		}
 
@@ -280,7 +286,7 @@ module.exports = function (
 		const role = getRole(threadData, senderID);
 		const langCode = threadData?.data?.lang || config.language || "en";
 
-		// ————— parameters (shared object) ————— //
+		// ————— parameters ————— //
 		const parameters = {
 			api, usersData, threadsData, message, event,
 			userModel, threadModel, prefix, dashBoardModel,
@@ -306,7 +312,6 @@ module.exports = function (
 			}
 		};
 
-		// ————— per-event syntax error handler (NO shared mutation) ————— //
 		function makeSyntaxError(commandName) {
 			return async function SyntaxError() {
 				return await message.reply(
@@ -315,7 +320,6 @@ module.exports = function (
 			};
 		}
 
-		// ————— error reply helper ————— //
 		const shortStack = (err) => {
 			try {
 				if (err?.stack) return removeHomeDir(err.stack.split("\n").slice(0, 5).join("\n"));
@@ -325,7 +329,6 @@ module.exports = function (
 			}
 		};
 
-		// ————— wrap Function → AsyncFunction without mutating original ————— //
 		const asAsync = (fn) => {
 			if (typeof fn !== "function") return null;
 			if (getType(fn) === "AsyncFunction") return fn;
@@ -336,11 +339,7 @@ module.exports = function (
 
 		startCleanups();
 
-		/*
-		 +-----------------------------------------------+
-		 |             WHEN USER CALLS COMMAND           |
-		 +-----------------------------------------------+
-		*/
+		// ============== ON START ==============
 		let isUserCallCommand = false;
 
 		async function onStart() {
@@ -440,11 +439,7 @@ module.exports = function (
 			}
 		}
 
-		/*
-		 +-----------------------------------------------+
-		 |                   ON CHAT                     |
-		 +-----------------------------------------------+
-		*/
+		// ============== ON CHAT ==============
 		async function onChat() {
 			const allOnChat = GoatBot.onChat || [];
 			const args = body ? body.split(/ +/) : [];
@@ -489,11 +484,7 @@ module.exports = function (
 			}
 		}
 
-		/*
-		 +-----------------------------------------------+
-		 |                 ON ANY EVENT                  |
-		 +-----------------------------------------------+
-		*/
+		// ============== ON ANY EVENT ==============
 		async function onAnyEvent() {
 			const allOnAnyEvent = GoatBot.onAnyEvent || [];
 			let args = [];
@@ -531,11 +522,7 @@ module.exports = function (
 			}
 		}
 
-		/*
-		 +-----------------------------------------------+
-		 |                 ON FIRST CHAT                 |
-		 +-----------------------------------------------+
-		*/
+		// ============== ON FIRST CHAT ==============
 		async function onFirstChat() {
 			const allOnFirstChat = GoatBot.onFirstChat || [];
 			const args = body ? body.split(/ +/) : [];
@@ -581,11 +568,7 @@ module.exports = function (
 			}
 		}
 
-		/*
-		 +-----------------------------------------------+
-		 |                    ON REPLY                   |
-		 +-----------------------------------------------+
-		*/
+		// ============== ON REPLY ==============
 		async function onReply() {
 			if (!event.messageReply) return;
 			const { onReply } = GoatBot;
@@ -641,11 +624,7 @@ module.exports = function (
 			}
 		}
 
-		/*
-		 +-----------------------------------------------+
-		 |                  ON REACTION                  |
-		 +-----------------------------------------------+
-		*/
+		// ============== ON REACTION ==============
 		async function onReaction() {
 			const { onReaction } = GoatBot;
 			const Reaction = onReaction.get(messageID);
@@ -698,11 +677,7 @@ module.exports = function (
 			}
 		}
 
-		/*
-		 +-----------------------------------------------+
-		 |                EVENT COMMAND                  |
-		 +-----------------------------------------------+
-		*/
+		// ============== HANDLER EVENT ==============
 		async function handlerEvent() {
 			const { author } = event;
 			const allEventCommand = GoatBot.eventCommands.entries();
@@ -729,11 +704,7 @@ module.exports = function (
 			}
 		}
 
-		/*
-		 +-----------------------------------------------+
-		 |                    ON EVENT                   |
-		 +-----------------------------------------------+
-		*/
+		// ============== ON EVENT ==============
 		async function onEvent() {
 			const allOnEvent = GoatBot.onEvent || [];
 			const args = [];
@@ -769,11 +740,7 @@ module.exports = function (
 			}
 		}
 
-		/*
-		 +-----------------------------------------------+
-		 |              PRESENCE / RECEIPT / TYP         |
-		 +-----------------------------------------------+
-		*/
+		// ============== STUBS ==============
 		async function presence() {}
 		async function read_receipt() {}
 		async function typ() {}
