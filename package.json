@@ -1,10 +1,10 @@
 {
   "name": "maruf-bot",
   "version": "1.5.35",
-  "description": "A powerful Facebook Messenger bot using personal account. Based on Goat Bot V2 by NTKhang03, customized by Maruf.",
-  "main": "index.js",
+  "description": "A powerful Facebook Messenger bot based on Goat Bot V2 by NTKhang03, customized by Maruf.",
+  "main": "Goat.js",
   "engines": {
-    "node": "18.x || 20.x || 22.x",
+    "node": "20.x",
     "npm": ">=8.0.0"
   },
   "dependencies": {
@@ -47,6 +47,8 @@
     "passport-local": "^1.0.0",
     "qrcode-reader": "^1.0.4",
     "qs": "^6.13.0",
+    "request": "^2.88.2",
+    "request-promise": "^4.2.6",
     "searchitunes": "^2.5.4",
     "sequelize": "^6.37.3",
     "socket.io": "^4.8.1",
@@ -57,14 +59,10 @@
     "yt-search": "^2.13.1",
     "ytsr": "^3.8.4"
   },
-  "overrides": {
-    "request": "npm:@cypress/request@^3.0.6",
-    "request-promise": "npm:@cypress/request-promise@^5.0.0"
-  },
   "scripts": {
-    "start": "node index.js",
-    "dev": "node index.js",
-    "prod": "node index.js",
+    "start": "node Goat.js",
+    "dev": "node Goat.js",
+    "prod": "node Goat.js",
     "update": "node updater-launcher.js",
     "backup": "node -e \"require('fs-extra').copySync('.', './backups/manual_' + Date.now(), { filter: f => !f.includes('node_modules') && !f.includes('backups') })\"",
     "clean": "node -e \"require('fs-extra').removeSync('node_modules'); console.log('node_modules removed')\"",
@@ -99,7 +97,6 @@
     "chatbot",
     "fca",
     "goat-bot",
-    "maruf-bot",
-    "unofficial-api"
+    "maruf-bot"
   ]
 }
