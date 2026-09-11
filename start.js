@@ -1,68 +1,41 @@
 /**
  * start.js — Maruf Bot
- * Copies Render Secret Files into project root before launching the bot.
- * Must be the Dockerfile ENTRYPOINT.
+ * Launches the bot. Config files are read directly from the project root (GitHub repo).
  */
 
 const fs = require("fs-extra");
 const path = require("path");
 
-const SECRETS = [
-	{ src: "/etc/secrets/config.json", dest: "config.json", required: true },
-	{ src: "/etc/secrets/configCommands.json", dest: "configCommands.json", required: false },
-	{ src: "/etc/secrets/account.txt", dest: "account.txt", required: false },
-	{ src: "/etc/secrets/appstate.json", dest: "appstate.json", required: false }
-];
-
 function log(tag, msg) {
-	const time = new Date().toISOString().replace("T", " ").slice(0, 19);
-	console.log(`[${time}] [START] ${tag} ${msg}`);
+    const time = new Date().toISOString().replace("T", " ").slice(0, 19);
+    console.log(`[${time}] [START] ${tag} ${msg}`);
 }
 
-for (const { src, dest, required } of SECRETS) {
-	const abs = path.resolve(__dirname, dest);
+// ————— Validate required files exist in project root —————
+const REQUIRED = ["config.json", "configCommands.json", "account.txt"];
 
-	if (!fs.existsSync(src)) {
-		if (required) {
-			log("❌", `Required secret missing: ${src}`);
-			log("💡", `Add it in Render → Environment → Secret Files`);
-			process.exit(1);
-		} else {
-			log("⚠️", `Optional secret not found: ${src} (skipped)`);
-		}
-		continue;
-	}
+for (const file of REQUIRED) {
+    const abs = path.resolve(__dirname, file);
+    if (!fs.existsSync(abs)) {
+        log("❌", `Required file missing: ${file}`);
+        log("💡", `Make sure it's committed to GitHub (not in .gitignore)`);
+        process.exit(1);
+    }
 
-	try {
-		// Read the secret content
-		const content = fs.readFileSync(src, "utf-8");
-
-		// Validate JSON files
-		if (dest.endsWith(".json")) {
-			try {
-				JSON.parse(content);
-			} catch (err) {
-				log("❌", `Invalid JSON in ${src}: ${err.message}`);
-				process.exit(1);
-			}
-		}
-
-		// Write to destination (overwrite any old broken symlink)
-		try {
-			if (fs.existsSync(abs) || fs.lstatSync(abs).isSymbolicLink?.()) {
-				fs.unlinkSync(abs);
-			}
-		} catch (_) {}
-
-		fs.writeFileSync(abs, content);
-		log("✅", `Loaded ${src} → ${dest} (${content.length} bytes)`);
-	} catch (err) {
-		log("❌", `Failed to load ${src}: ${err.message}`);
-		if (required) process.exit(1);
-	}
+    // Validate JSON files
+    if (file.endsWith(".json")) {
+        try {
+            const content = fs.readFileSync(abs, "utf-8");
+            JSON.parse(content);
+            log("✅", `${file} OK (${content.length} bytes)`);
+        } catch (err) {
+            log("❌", `Invalid JSON in ${file}: ${err.message}`);
+            process.exit(1);
+        }
+    } else {
+        log("✅", `${file} OK`);
+    }
 }
 
 log("🚀", "Starting bot...");
-
-// Launch the actual bot
 require("./Goat.js");
