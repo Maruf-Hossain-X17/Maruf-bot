@@ -12,6 +12,7 @@ cookies.txt
 
 config.json
 configCommands.json
+
 backups/
 logs/
 
@@ -36,4 +37,3 @@ DOCS.md
 STEP_INSTALL.md
 LICENSE
 docker-compose*.yml
-Dockerfile*
