@@ -29,7 +29,7 @@ module.exports = {
     name: "translation",
     aliases: ["tr", "translate"],
     version: "2.1",
-    author: "ChatGPT",
+    author: "Maruf",
     role: 0,
     shortDescription: {
       en: "Translate text or see language codes",
