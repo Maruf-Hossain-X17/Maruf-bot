@@ -1,113 +1,121 @@
-const fs = require("fs");
-const path = require("path");
+const axios = require("axios");
 
-const quizPath = path.join(__dirname, "..", "..", "database", "data", "quiz.json");
-const usedPath = path.join(__dirname, "..", "..", "database", "data", "quizUsed.json");
+const mahmud = async () => {
+        const base = await axios.get("https://raw.githubusercontent.com/mahmudx7/HINATA/main/baseApiUrl.json");
+        return base.data.mahmud;
+};
 
 module.exports = {
-  config: {
-    name: "quiz",
-    version: "2.3",
-    author: "ChatGPT",
-    countDown: 5,
-    role: 0,
-    description: {
-      en: "Play a quiz game",
-      bn: "কুইজ খেলুন"
-    },
-    category: "fun",
-    guide: {
-      en: "{pn}",
-      bn: "{pn}"
-    }
-  },
+        config: {
+                name: "quiz",
+                aliases: ["qz"],
+                version: "1.7",
+                author: "MahMUD",
+                countDown: 10,
+                role: 0,
+                description: {
+                        bn: "সাধারণ জ্ঞান কুইজ খেলে কয়েন এবং এক্সপি জিতুন",
+                        en: "Play general knowledge quiz to win coins and exp",
+                        vi: "Chơi trò chơi đố vui kiến thức để giành được xu và exp"
+                },
+                category: "game",
+                guide: {
+                        bn: '   {pn} en: ইংরেজি কুইজ\n   {pn} bn: বাংলা কুইজ',
+                        en: '   {pn} en: English quiz\n   {pn} bn: Bangla quiz',
+                        vi: '   {pn} en: Câu đố tiếng Anh\n   {pn} bn: Câu đố tiếng Bengal'
+                }
+        },
 
-  onStart: async function ({ api, event }) {
-    if (!fs.existsSync(quizPath)) {
-      return api.sendMessage("❌ কুইজ ফাইল খুঁজে পাওয়া যায়নি!", event.threadID);
-    }
+        langs: {
+                bn: {
+                        reply: "𝐑𝐞𝐩𝐥𝐲 𝐰𝐢𝐭𝐡 𝐲𝐨𝐮𝐫 𝐚𝐧𝐬𝐰𝐞𝐫.",
+                        correct: "✅ | একদম সঠিক উত্তর বেবি!\n\nতুমি জিতেছো %1 কয়েন এবং %2 এক্সপি।",
+                        wrong: "❌ | উত্তরটি ভুল হয়েছে বেবি!\n\nসঠিক উত্তর ছিল: %1",
+                        notYour: "× বেবি, এটি তোমার কুইজ নয়! নিজের জন্য শুরু করো। >🐸",
+                        error: "× সমস্যা হয়েছে: %1। প্রয়োজনে Contact MahMUD।"
+                },
+                en: {
+                        reply: "𝐑𝐞𝐩𝐥𝐲 𝐰𝐢𝐭𝐡 𝐲𝐨𝐮𝐫 𝐚𝐧𝐬𝐰𝐞𝐫.",
+                        correct: "✅ | Correct answer baby!\n\nYou earned %1 coins & %2 exp.",
+                        wrong: "❌ | Wrong answer baby!\n\nThe correct answer was: %1",
+                        notYour: "𝐓𝐡𝐢𝐬 𝐢𝐬 𝐧𝐨𝐭 𝐲𝐨𝐮𝐫 𝐪𝐮𝐢𝐳 𝐛𝐚𝐛𝐲 >🐸",
+                        error: "× API error: %1. Contact MahMUD for help."
+                },
+                vi: {
+                        reply: "Trả lời bằng đáp án của bạn đi cưng",
+                        correct: "✅ | Đáp án chính xác cưng ơi!\n\nBạn nhận được %1 xu & %2 exp.",
+                        wrong: "❌ | Sai rồi cưng ơi!\n\n💡 Đáp án đúng là: %1",
+                        notYour: "× Đây không phải câu đố của bạn cưng à! >🐸",
+                        error: "× Lỗi: %1. Liên hệ MahMUD để được hỗ trợ."
+                }
+        },
 
-    const questions = JSON.parse(fs.readFileSync(quizPath, "utf8"));
-    let usedData = fs.existsSync(usedPath) ? JSON.parse(fs.readFileSync(usedPath, "utf8")) : {};
+        onStart: async function ({ api, event, args, getLang }) {
+                const authorName = String.fromCharCode(77, 97, 104, 77, 85, 68); 
+                if (this.config.author !== authorName) {
+                        return api.sendMessage("You are not authorized to change the author name.", event.threadID, event.messageID);
+                }
+                
+                try {
+                        const input = args.join("").toLowerCase();
+                        const category = input === "en" || input === "english" ? "english" : "bangla";
 
-    const userId = event.senderID;
-    const usedByUser = usedData[userId] || [];
-    const unused = questions.filter((q, idx) => !usedByUser.includes(idx));
+                        const apiUrl = await mahmud();
+                        const res = await axios.get(`${apiUrl}/api/quiz?category=${category}`);
+                        const quiz = res.data;
 
-    if (unused.length === 0) {
-      return api.sendMessage("✅ আপনি সব কুইজ শেষ করেছেন! 🎉", event.threadID);
-    }
+                        if (!quiz) return api.sendMessage("× No quiz available baby.", event.threadID, event.messageID);
 
-    const randomIndex = Math.floor(Math.random() * unused.length);
-    const selectedQuestion = unused[randomIndex];
-    const actualIndex = questions.findIndex(q => q.question === selectedQuestion.question);
+                        const { question, correctAnswer, options } = quiz;
+                        const { a, b, c, d } = options;
 
-    usedByUser.push(actualIndex);
-    usedData[userId] = usedByUser;
-    fs.writeFileSync(usedPath, JSON.stringify(usedData, null, 2));
+                        const quizMsg = `\n╭──✦ ${question}\n`
+                                + `├‣ 𝗔) ${a}\n`
+                                + `├‣ 𝗕) ${b}\n`
+                                + `├‣ 𝗖) ${c}\n`
+                                + `├‣ 𝗗) ${d}\n`
+                                + `╰──────────────────‣\n`
+                                + `${getLang("reply")}`;
 
-    const boxText = `
-╭───────────────⭓
-│ 🧠 কুইজ টাইম!
-│
-│ ❓ ${selectedQuestion.question}
-│
-${selectedQuestion.options.map(opt => `│ ${opt}`).join("\n")}
-│
-│ 📩 উত্তর দিন (A/B/C/D) এই মেসেজে রিপ্লাই করে
-╰───────────────⭓`;
+                        api.sendMessage(quizMsg, event.threadID, (error, info) => {
+                                global.GoatBot.onReply.set(info.messageID, {
+                                        type: "reply",
+                                        commandName: this.config.name,
+                                        author: event.senderID,
+                                        messageID: info.messageID,
+                                        correctAnswer
+                                });
 
-    api.sendMessage(boxText, event.threadID, (err, info) => {
-      global.GoatBot.onReply.set(info.messageID, {
-        commandName: this.config.name,
-        author: event.senderID,
-        correctAnswer: selectedQuestion.answer,
-        messageID: info.messageID
-      });
-    });
-  },
+                                setTimeout(() => {
+                                        api.unsendMessage(info.messageID);
+                                }, 40000);
+                        }, event.messageID);
 
-  onReply: async function ({ api, event, Reply }) {
-    const { author, correctAnswer, messageID } = Reply;
+                } catch (error) {
+                        api.sendMessage(getLang("error", error.message), event.threadID, event.messageID);
+                }
+        },
 
-    if (event.senderID !== author)
-      return api.sendMessage("⚠️ এই কুইজটি আপনি শুরু করেননি।", event.threadID, event.messageID);
+        onReply: async function ({ event, api, Reply, usersData, getLang }) {
+                const { correctAnswer, author } = Reply;
+                if (event.senderID !== author) return api.sendMessage(getLang("notYour"), event.threadID, event.messageID);
 
-    const userAnswer = event.body.trim().toUpperCase();
-    if (!["A", "B", "C", "D"].includes(userAnswer)) {
-      return api.sendMessage("⚠️ অনুগ্রহ করে শুধু A, B, C, অথবা D লিখুন।", event.threadID, event.messageID);
-    }
+                const userReply = event.body.trim().toLowerCase();
+                const userData = await usersData.get(author);
+                const rewardCoins = 500;
+                const rewardExp = 121;
 
-    try {
-      await api.unsendMessage(messageID);
-    } catch (e) {
-      console.log("❌ মেসেজ ডিলিট করতে ব্যর্থ:", e.message);
-    }
+                await api.unsendMessage(Reply.messageID);
 
-    const correct = userAnswer === correctAnswer;
-    const coinReward = correct ? Math.floor(Math.random() * 50 + 50) : 0;  // 50–99 coins
-    const expReward = correct ? Math.floor(Math.random() * 30 + 30) : 0;   // 30–59 EXP
-
-    let resultMsg = "";
-
-    if (correct) {
-      resultMsg = `
-🎉 Congratulations, Quiz Master!
-
-🏆 You're a Quiz Champion!
-🎁 You've earned:
-   💰 ${coinReward} Coins
-   ✨ ${expReward} EXP
-
-🚀 Keep it up!
-`;
-      // Economy system handle
-      if (global.db && global.db.addMoney) await global.db.addMoney(event.senderID, coinReward);
-      if (global.db && global.db.addExp) await global.db.addExp(event.senderID, expReward);
-    } else {
-      resultMsg = `❌ ভুল উত্তর 😓\n✔️ সঠিক উত্তর ছিল: ${correctAnswer}`;
-    }
-
-    return api.sendMessage(resultMsg, event.threadID, event.messageID);
-  }
+                if (userReply === correctAnswer.toLowerCase()) {
+                        await usersData.set(author, {
+                                money: userData.money + rewardCoins,
+                                exp: userData.exp + rewardExp,
+                                data: userData.data
+                        });
+                        return api.sendMessage(getLang("correct", rewardCoins, rewardExp), event.threadID, event.messageID);
+                } else {
+                        return api.sendMessage(getLang("wrong", correctAnswer), event.threadID, event.messageID);
+                }
+        }
 };

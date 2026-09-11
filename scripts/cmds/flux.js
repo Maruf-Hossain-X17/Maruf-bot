@@ -6,7 +6,7 @@ const API_ENDPOINT = "https://dev.oculux.xyz/api/flux-1.1-pro";
 
 module.exports = {
   config: {
-    name: "flux",
+    name: "flux3",
     aliases: ["fpro", "flux11"],
     version: "1.0", 
     author: "NeoKEX",

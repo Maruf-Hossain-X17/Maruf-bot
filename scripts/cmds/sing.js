@@ -27,7 +27,7 @@ async function fetchBaseApiUrl() {
 module.exports = {
   config: {
     name: "sing",
-    version: "4.1.0",
+    version: "4.0.0",
     author: "Maruf Hossain",
     countDown: 8,
     role: 0,
@@ -94,22 +94,18 @@ module.exports = {
         timeout: 30000
       });
 
-      if (!resData || (!resData.status && !resData.success) || !resData.downloadLink) {
+      if (!resData || (!resData.status && !resData.success) || !resData.streamUrl) {
         throw new Error(resData?.error || resData?.message || "অডিও লিঙ্ক তৈরি করা সম্ভব হয়নি!");
       }
 
       // ৩. ক্যাশ ডিরেক্টরি সুনিশ্চিত করা
       await fs.ensureDir(cacheFolder);
 
-      // ৪. সরাসরি ইউটিউবের ডাউনলোড লিংক থেকে ফাস্ট ও রিলায়েবল ডাউনলোড (403 এড়ানোর জন্য)
+      // ৪. ফাস্ট ও রিলায়েবল স্ট্রিমিং ডাউনলোড
       const streamResponse = await axios({
         method: "GET",
-        url: resData.downloadLink,
+        url: resData.streamUrl,
         responseType: "stream",
-        headers: {
-          "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
-          "Referer": "https://www.youtube.com/"
-        },
         timeout: 90000
       });
 
