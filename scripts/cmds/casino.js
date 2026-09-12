@@ -173,7 +173,7 @@ module.exports = {
   config: {
     name: "casino",
     version: "2.4.78",
-    author: "Mahi-- | enhanced by ST",
+    author: "Maruf",
     shortDescription: { en: "Casino world with slots, blackjack, roulette" },
     longDescription: { en: "Play Slots, Blackjack (image), and Roulette (GIF)." },
     category: "Games",
