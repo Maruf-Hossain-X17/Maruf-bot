@@ -8,15 +8,16 @@ const path = require("path");
 module.exports = {
   config: {
     name: "cpanel",
-    version: "2.4.78",
-    author: "Christus | Updated by ST",
+    version: "2.4.79",
+    author: "maruf",
     description: "Génère un GIF animé type tableau de bord système en style hexagonal.",
     usage: "cpanel",
     category: "système",
     role: 0
   },
 
-  ST: async function ({ api, event }) {
+  // ✅ FIX: ST → onStart
+  onStart: async function ({ api, event }) {
     try {
       const width = 1000, height = 700;
       const encoder = new GIFEncoder(width, height);
@@ -135,11 +136,14 @@ module.exports = {
         api.sendMessage({
           body: "📊 System Dashboard",
           attachment: fs.createReadStream(filePath)
-        }, event.threadID, () => fs.unlinkSync(filePath));
+        }, event.threadID, () => {
+          // ✅ FIX: safe cleanup
+          try { fs.unlinkSync(filePath); } catch (_) {}
+        });
       });
 
     } catch (err) {
-      console.error(err);
+      console.error("[cpanel]", err);
       api.sendMessage("❌ Une erreur est survenue lors de la génération du tableau de bord.", event.threadID);
     }
   }
