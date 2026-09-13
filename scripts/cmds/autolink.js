@@ -1,7 +1,6 @@
 const axios = require("axios");
 const fs = require("fs");
 const path = require("path");
-const mongoose = require("mongoose");
 
 const cacheDir = path.join(__dirname, "cache");
 const processing = new Set();
@@ -22,52 +21,6 @@ if (fs.existsSync(cacheDir)) {
 } else {
     fs.mkdirSync(cacheDir, { recursive: true });
 }
-
-// ===============================
-// MONGODB CONNECTION
-// ===============================
-async function initMongoDB() {
-    if (mongoose.connection.readyState === 1) return;
-
-    try {
-        const configPath = path.join(process.cwd(), "config.json");
-
-        if (!fs.existsSync(configPath)) {
-            console.log("AutoDL: config.json not found.");
-            return;
-        }
-
-        const config = JSON.parse(fs.readFileSync(configPath, "utf8"));
-        const uri = config.uriMongodb || config.mongoURI;
-
-        if (!uri) {
-            console.log("AutoDL: MongoDB URI not found.");
-            return;
-        }
-
-        await mongoose.connect(uri);
-        console.log("AutoDL: MongoDB connected.");
-    } catch (err) {
-        console.error("MongoDB Connection Error in AutoDL:", err.message);
-    }
-}
-
-// ===============================
-// MONGOOSE MODEL
-// ===============================
-const autoDLSchema = new mongoose.Schema({
-    threadID: {
-        type: String,
-        required: true,
-        unique: true
-    },
-    enabled: {
-        type: Boolean,
-        default: false
-    }
-});
-
-const AutoDL = mongoose.models.AutoDL || mongoose.model("AutoDL", autoDLSchema);
 
 // ===============================
 // MARUF API CONFIG
@@ -105,7 +58,6 @@ async function getMarufApiUrl() {
 function cleanUrl(link) {
     try {
         const u = new URL(link);
-        // Common tracking query params to strip
         const paramsToStrip = ["utm_source", "utm_medium", "utm_campaign", "igsh", "si", "fbclid"];
         paramsToStrip.forEach(p => u.searchParams.delete(p));
         return u.toString();
@@ -185,7 +137,6 @@ async function fetchFromCobaltApi(link) {
             return res.data.url;
         }
     } catch (e) {
-        // Fallback Cobalt Instance
         try {
             const res2 = await axios.post(
                 "https://api.cobalt.tools/api/json",
@@ -210,7 +161,6 @@ async function fetchFromCobaltApi(link) {
 // API 4: TIKTOK SPECIAL BACKUPS
 // ===============================
 async function getTikTokBackupUrl(link) {
-    // TikWM
     try {
         const tikwmRes = await axios.get(
             `https://www.tikwm.com/api/?url=${encodeURIComponent(link)}&hd=1`,
@@ -224,7 +174,6 @@ async function getTikTokBackupUrl(link) {
         }
     } catch (e) {}
 
-    // TiklyDown
     try {
         const tiklyRes = await axios.get(
             `https://api.tiklydown.eu.org/api/download?url=${encodeURIComponent(link)}`,
@@ -275,7 +224,7 @@ function getPlatformName(url) {
 }
 
 // ===============================
-// MESSAGE CREATOR (FIXED AS REQUESTED)
+// MESSAGE CREATOR
 // ===============================
 function createFinalMessage(platformName) {
     return (
@@ -306,6 +255,100 @@ async function downloadMedia(url) {
 }
 
 // ===============================
+// PROCESS VIDEO LOGIC
+// ===============================
+async function processAndSendVideo(api, event, link, index) {
+    const key = `${event.threadID}_${link}`;
+    if (processing.has(key)) return;
+    processing.add(key);
+
+    const videoPath = path.join(cacheDir, `${event.messageID}_${index}.mp4`);
+
+    try {
+        api.setMessageReaction("⏳", event.messageID, () => {}, true);
+
+        let vUrl = null;
+        vUrl = await fetchFromMarufApi(link);
+        if (!vUrl) vUrl = await fetchFromNoobsApi(link);
+        if (!vUrl) vUrl = await fetchFromCobaltApi(link);
+        if (!vUrl && getPlatformName(link) === "TIKTOK") vUrl = await getTikTokBackupUrl(link);
+        if (!vUrl) vUrl = await fetchFromPublicBackupApi(link);
+
+        if (!vUrl) {
+            throw new Error("Could not extract downloadable video URL.");
+        }
+
+        let videoRes = null;
+        try {
+            videoRes = await downloadMedia(vUrl);
+        } catch (dlErr) {
+            if (getPlatformName(link) === "TIKTOK") {
+                const tkBackup = await getTikTokBackupUrl(link);
+                if (tkBackup) videoRes = await downloadMedia(tkBackup);
+            }
+        }
+
+        if (!videoRes || !videoRes.data) {
+            throw new Error("Failed to download video stream.");
+        }
+
+        fs.writeFileSync(videoPath, Buffer.from(videoRes.data));
+
+        if (!fs.existsSync(videoPath) || fs.statSync(videoPath).size === 0) {
+            throw new Error("Downloaded file is empty.");
+        }
+
+        const sizeInMB = fs.statSync(videoPath).size / (1024 * 1024);
+
+        if (sizeInMB > 45) {
+            if (fs.existsSync(videoPath)) fs.unlinkSync(videoPath);
+            api.setMessageReaction("❌", event.messageID, () => {}, true);
+
+            let shortLink = vUrl;
+            if (global.utils?.shortenURL) {
+                try { shortLink = await global.utils.shortenURL(vUrl); } catch (e) {}
+            }
+
+            return api.sendMessage(
+                {
+                    body: `⚠️ VIDEO IS TOO LARGE (${sizeInMB.toFixed(2)} MB)\n\n📥 DIRECT DOWNLOAD LINK:\n${shortLink}`
+                },
+                event.threadID,
+                event.messageID
+            );
+        }
+
+        const platformName = getPlatformName(link);
+        const finalMessage = createFinalMessage(platformName);
+
+        api.sendMessage(
+            {
+                body: finalMessage,
+                attachment: fs.createReadStream(videoPath)
+            },
+            event.threadID,
+            () => {
+                try {
+                    if (fs.existsSync(videoPath)) fs.unlinkSync(videoPath);
+                } catch (e) {}
+            },
+            event.messageID
+        );
+
+        api.setMessageReaction("✅", event.messageID, () => {}, true);
+
+    } catch (err) {
+        console.error("AutoDL Error for URL:", link, err.message);
+        try {
+            if (fs.existsSync(videoPath)) fs.unlinkSync(videoPath);
+        } catch (e) {}
+        api.setMessageReaction("❌", event.messageID, () => {}, true);
+    } finally {
+        processing.delete(key);
+    }
+}
+
+// ===============================
 // MODULE EXPORTS
 // ===============================
 module.exports = {
@@ -313,79 +356,39 @@ module.exports = {
     config: {
         name: "autodl",
         aliases: ["alldl", "autolink"],
-        version: "3.0.0",
+        version: "4.0.0",
         author: "Maruf",
         countDown: 0,
         role: 0,
         description: {
-            en: "Super Smart Auto Download Video with Multi-API Fallbacks"
+            en: "Always active Auto Video Downloader for supported links"
         },
         category: "media",
         guide: {
-            en: "{pn} on\n{pn} off"
+            en: "Just send any supported video link (FB, Insta, TikTok, YT, Pin, etc.)"
         }
     },
 
-    // ===============================
-    // COMMAND START (ON / OFF)
-    // ===============================
+    // COMMAND TRIGGER: DIRECT LINK DOWNLOAD
     onStart: async function ({ api, event, args }) {
-        await initMongoDB();
-
-        const command = args[0]?.toLowerCase();
-
-        if (command === "on") {
-            await AutoDL.findOneAndUpdate(
-                { threadID: event.threadID },
-                { enabled: true },
-                { upsert: true, new: true }
-            );
-
+        if (!args[0]) {
             return api.sendMessage(
-                "✅ AUTO DOWNLOAD ENABLED FOR THIS THREAD.",
+                "📥 AUTO DOWNLOADER IS ALWAYS ACTIVE!\n\nJust paste any video link from Facebook, Instagram, TikTok, YouTube, etc.",
                 event.threadID,
                 event.messageID
             );
         }
-
-        if (command === "off") {
-            await AutoDL.findOneAndUpdate(
-                { threadID: event.threadID },
-                { enabled: false },
-                { upsert: true, new: true }
-            );
-
-            return api.sendMessage(
-                "❌ AUTO DOWNLOAD DISABLED FOR THIS THREAD.",
-                event.threadID,
-                event.messageID
-            );
-        }
-
-        return api.sendMessage(
-            "📥 USAGE:\n\nAUTODL ON\nAUTODL OFF",
-            event.threadID,
-            event.messageID
-        );
+        await processAndSendVideo(api, event, cleanUrl(args[0]), 0);
     },
 
-    // ===============================
-    // AUTO DOWNLOAD CHAT EVENT
-    // ===============================
+    // AUTO CHAT LISTENER (ALWAYS ACTIVE)
     onChat: async function ({ api, event }) {
         if (!event.body) return;
 
-        await initMongoDB();
-
-        const threadConfig = await AutoDL.findOne({ threadID: event.threadID });
-        if (!threadConfig || !threadConfig.enabled) return;
-
-        // URL Regex
         const urlRegex = /https?:\/\/[^\s<>"']+/gi;
         const matches = event.body.match(urlRegex);
         if (!matches) return;
 
-        // Supported domains
         const supportedDomains = [
             "facebook.com", "fb.watch", "fb.gg",
             "instagram.com",
@@ -404,127 +407,7 @@ module.exports = {
             if (!isValidLink) continue;
 
             const link = cleanUrl(rawLink);
-            const key = `${event.threadID}_${link}`;
-
-            if (processing.has(key)) continue;
-            processing.add(key);
-
-            const videoPath = path.join(cacheDir, `${event.messageID}_${i}.mp4`);
-
-            try {
-                // Set loading reaction
-                api.setMessageReaction("⏳", event.messageID, () => {}, true);
-
-                let vUrl = null;
-
-                // 1. Primary Maruf API
-                vUrl = await fetchFromMarufApi(link);
-
-                // 2. Fallback: Noobs API
-                if (!vUrl) {
-                    vUrl = await fetchFromNoobsApi(link);
-                }
-
-                // 3. Fallback: Cobalt Engine
-                if (!vUrl) {
-                    vUrl = await fetchFromCobaltApi(link);
-                }
-
-                // 4. Fallback: TikTok Special Backup
-                if (!vUrl && getPlatformName(link) === "TIKTOK") {
-                    vUrl = await getTikTokBackupUrl(link);
-                }
-
-                // 5. Fallback: Public Backup API
-                if (!vUrl) {
-                    vUrl = await fetchFromPublicBackupApi(link);
-                }
-
-                if (!vUrl) {
-                    throw new Error("Could not extract downloadable video URL from any source.");
-                }
-
-                // Download File
-                let videoRes = null;
-                try {
-                    videoRes = await downloadMedia(vUrl);
-                } catch (dlErr) {
-                    // Try tiktok backup download if main download failed
-                    if (getPlatformName(link) === "TIKTOK") {
-                        const tkBackup = await getTikTokBackupUrl(link);
-                        if (tkBackup) {
-                            videoRes = await downloadMedia(tkBackup);
-                        }
-                    }
-                }
-
-                if (!videoRes || !videoRes.data) {
-                    throw new Error("Failed to download video stream.");
-                }
-
-                // Save to cache
-                fs.writeFileSync(videoPath, Buffer.from(videoRes.data));
-
-                if (!fs.existsSync(videoPath) || fs.statSync(videoPath).size === 0) {
-                    throw new Error("Downloaded file is empty.");
-                }
-
-                const sizeInMB = fs.statSync(videoPath).size / (1024 * 1024);
-
-                // Check 45MB limit for FB Messenger
-                if (sizeInMB > 45) {
-                    if (fs.existsSync(videoPath)) fs.unlinkSync(videoPath);
-
-                    api.setMessageReaction("❌", event.messageID, () => {}, true);
-
-                    let shortLink = vUrl;
-                    if (global.utils?.shortenURL) {
-                        try { shortLink = await global.utils.shortenURL(vUrl); } catch (e) {}
-                    }
-
-                    return api.sendMessage(
-                        {
-                            body: `⚠️ VIDEO IS TOO LARGE (${sizeInMB.toFixed(2)} MB)\n\n📥 DIRECT DOWNLOAD LINK:\n${shortLink}`
-                        },
-                        event.threadID,
-                        event.messageID
-                    );
-                }
-
-                // Send Final Message
-                const platformName = getPlatformName(link);
-                const finalMessage = createFinalMessage(platformName);
-
-                api.sendMessage(
-                    {
-                        body: finalMessage,
-                        attachment: fs.createReadStream(videoPath)
-                    },
-                    event.threadID,
-                    () => {
-                        try {
-                            if (fs.existsSync(videoPath)) {
-                                fs.unlinkSync(videoPath);
-                            }
-                        } catch (e) {}
-                    },
-                    event.messageID
-                );
-
-                // Success reaction
-                api.setMessageReaction("✅", event.messageID, () => {}, true);
-
-            } catch (err) {
-                console.error("AutoDL Error for URL:", link, err.message);
-
-                try {
-                    if (fs.existsSync(videoPath)) fs.unlinkSync(videoPath);
-                } catch (e) {}
-
-                api.setMessageReaction("❌", event.messageID, () => {}, true);
-            } finally {
-                processing.delete(key);
-            }
+            await processAndSendVideo(api, event, link, i);
         }
     }
 };
