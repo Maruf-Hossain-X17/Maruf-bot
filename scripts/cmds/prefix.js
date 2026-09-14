@@ -45,7 +45,7 @@ module.exports = {
     config: {
         name: "prefix",
         version: "3.6",
-        author: "NTKhang (Improved by ChatGPT)",
+        author: "Maruf",
         countDown: 5,
         role: 0,
         description: "Show or change prefix of bot",
