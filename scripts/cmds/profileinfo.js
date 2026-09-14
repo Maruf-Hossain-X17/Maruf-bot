@@ -7,7 +7,7 @@ module.exports = {
   config: {
     name: "profileinfo",
     version: "5.4",
-    author: "Maruf x ChatGPT",
+    author: "Maruf",
     countDown: 5,
     role: 0,
     shortDescription: "Full Facebook profile details",
