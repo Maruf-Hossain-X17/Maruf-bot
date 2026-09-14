@@ -4,7 +4,7 @@ module.exports = {
   config: {
     name: "imglink",
     version: "1.1.0",
-    author: "Gemini",
+    author: "Maruf",
     countDown: 5,
     role: 0,
     category: "utility",
