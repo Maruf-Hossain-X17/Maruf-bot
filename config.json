@@ -1,8 +1,8 @@
 {
   "facebookAccount": {
-    "email": "mlbl7202@gmail.com",
-    "password": "Ma1bl2f3@",
-    "2FASecret": "I2ZGCVTIVF6TKGPHQWVMMK34YVR2DYES",
+    "email": "",
+    "password": "",
+    "2FASecret": "",
     "i_user": "",
     "proxy": null,
     "userAgent": "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/137.0.0.0 Mobile Safari/537.36",
@@ -10,7 +10,7 @@
   },
   "antiInbox": false,
   "language": "en",
-  "nickNameBot": "itachi",
+  "nickNameBot": "Maruf-bot",
   "prefix": "+",
   "usePrefix": {
     "enable": true,
@@ -36,9 +36,6 @@
   },
   "adminBot": [
     "100066542686904",
-    "61570727252463",
-    "61556572161122",
-    "100071457007723"
   ],
   "mainAdmin": [
     "100066542686904"
@@ -140,7 +137,7 @@
         "1553614942527332"
       ]
     },
-    "message": "⚔️ Itachi Bot is now Online! Darkness has arrived."
+    "message": "⚔️ Maruf Bot is now Online! Darkness has arrived."
   },
   "threadApproval": {
     "enable": false,
