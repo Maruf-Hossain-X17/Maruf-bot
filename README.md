@@ -93,7 +93,7 @@ Resource| Description
 "STEP_INSTALL.md" (https://github.com/maruf127679-pixel/Maruf-bot/blob/main/STEP_INSTALL.md)| Installation and setup instructions
 "DOCS.md" (https://github.com/maruf127679-pixel/Maruf-bot/blob/main/DOCS.md)| Command development and project documentation
 "GitHub Issues" (https://github.com/maruf127679-pixel/Maruf-bot/issues)| Bug reports and project discussions
-"Official Website" (https://maruf-x-hub.onrender.com)| MARUF-X-HUB project website
+"Official Website" (https://web.maruf-x-hub.page.gd)| MARUF-X-HUB project website
 
 💡 How Does Maruf Bot Work?
 
