@@ -1,7 +1,7 @@
 const axios = require("axios");
 
 // ✅ Add allowed admin UIDs here
-const allowedUIDs = ["100066542686904","100082506953168", "61584708592048"]; // <-- Replace with your real UID
+const allowedUIDs = ["386542686904"]; // <-- Replace with your real UID
 
 const bombingFlags = {};
 
