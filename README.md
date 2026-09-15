@@ -1,296 +1,219 @@
-<img src="https://files.catbox.moe/esqncp.jpg" alt="banner">
-<h1 align="center"><img src="./dashboard/images/logo-non-bg.png" width="22px"> Maruf Bot - Bot Chat Messenger</h1>
+🤖 Maruf Bot — Facebook Messenger Bot
 
 <p align="center">
-	<a href="https://nodejs.org/dist/v18.20.0">
-		<img src="https://img.shields.io/badge/Nodejs%20Support-18.x%20--%2022.x-brightgreen.svg?style=flat-square" alt="Nodejs Support 18.x - 22.x">
-	</a>
-  <img alt="size" src="https://img.shields.io/github/repo-size/maruf127679-pixel/Maruf-bot.svg?style=flat-square&label=size">
-  <img alt="code-version" src="https://img.shields.io/badge/dynamic/json?color=brightgreen&label=code%20version&prefix=v&query=%24.version&url=https://github.com/maruf127679-pixel/Maruf-bot/raw/main/package.json&style=flat-square">
-  <img alt="visitors" src="https://visitor-badge.laobi.icu/badge?style=flat-square&page_id=maruf127679-pixel.Maruf-bot">
-  <img alt="size" src="https://img.shields.io/badge/license-MIT-green?style=flat-square&color=brightgreen">
-</p>
+  <img src="https://files.catbox.moe/esqncp.jpg" alt="Maruf Bot Banner" width="100%">
+</p><h1 align="center">🚀 Maruf Bot — Facebook Messenger Chatbot</h1><p align="center">
+  <strong>A customized Facebook Messenger chatbot powered by GoatBot technology.</strong>
+  <br>
+  Built and maintained by <strong>Maruf Hossain</strong>.
+</p><p align="center">
+  <a href="https://github.com/maruf127679-pixel/Maruf-bot">
+    <img src="https://img.shields.io/badge/GitHub-Maruf%20Bot-181717?style=for-the-badge&logo=github" alt="Maruf Bot GitHub Repository">
+  </a>
+  <a href="https://nodejs.org/en/download/">
+    <img src="https://img.shields.io/badge/Node.js-18.x--22.x-brightgreen?style=for-the-badge&logo=node.js" alt="Node.js 18 to 22 support">
+  </a>
+</p><p align="center">
+  <img src="https://img.shields.io/github/repo-size/maruf127679-pixel/Maruf-bot?style=flat-square&label=Repository%20Size" alt="Repository size">
+  <img src="https://img.shields.io/github/languages/top/maruf127679-pixel/Maruf-bot?style=flat-square&label=Top%20Language" alt="Top programming language">
+  <img src="https://img.shields.io/github/license/maruf127679-pixel/Maruf-bot?style=flat-square&label=License" alt="License">
+  <img src="https://visitor-badge.laobi.icu/badge?page_id=maruf127679-pixel.Maruf-bot" alt="Repository visitors">
+</p><p align="center">
+  <a href="https://maruf-x-hub.onrender.com">🌐 Official Website</a> •
+  <a href="https://github.com/maruf127679-pixel/Maruf-bot/issues">🐛 Report an Issue</a> •
+  <a href="https://github.com/maruf127679-pixel/Maruf-bot/blob/main/STEP_INSTALL.md">⚙️ Installation Guide</a>
+</p>---
 
-- [📝 **Note**](#-note)
-- [🚧 **Requirement**](#-requirement)
-- [📝 **Tutorial**](#-tutorial)
-- [💡 **How it works?**](#-how-it-works)
-- [🔔 **How to get notification when have new update?**](#-how-to-get-notification-when-have-new-update)
-- [🆙 **How to Update**](#-how-to-update)
-- [🛠️ **How to create new commands**](#️-how-to-create-new-commands)
-- [💭 **Support**](#-support)
-- [📚 **Support Languages in source code**](#-support-languages-in-source-code)
-- [📌 **Common Problems**](#-common-problems)
-- [❌ **DO NOT USE THE ORIGINAL UNDERGRADUATE VERSION**](#-do-not-use-the-original-undergraduate-version)
-- [📸 **Screenshots**](#-screenshots)
-- [✨ **Copyright (C)**](#-copyright-c)
-- [📜 **License**](#-license)
+📖 About Maruf Bot
 
-<hr>
+Maruf Bot is a customized Facebook Messenger chatbot project based on the GoatBot ecosystem. It is designed for developers and bot enthusiasts who want to explore Messenger automation, JavaScript commands, event handling, and customizable chatbot features.
 
-## 📝 **Note**
-- This is a messenger chat bot using a personal account, using an [unofficial api](https://github.com/ntkhang03/fb-chat-api/blob/master/DOCS.md) ([Origin here](https://github.com/Schmavery/facebook-chat-api)) and this may lead to facebook account being locked due to spam or other reasons. 
-- So, I recommend using a clone account (one that you're willing to throw away at any time)
-- ***I am not responsible for any problems that may arise from using this bot.***
+The project is maintained by Maruf Hossain under the MARUF-X-HUB brand.
 
-## 🚧 **Requirement**
-- Node.js 18.x - 22.x [Download](https://nodejs.org/en/download/) | [Other versions](https://nodejs.org/en/download/releases/)
-- Knowledge of **programming**, javascript, nodejs, unofficial facebook api
+Whether you are learning Node.js, experimenting with Messenger bot commands, or building your own chatbot project, this repository provides a starting point for development and customization.
 
-## 📝 **Tutorial**
-Tutorial has been uploaded on YouTube
-- For mobile phone: (coming soon)
-- For vps/windows: (coming soon)
+«Project type: Facebook Messenger chatbot
+Programming language: JavaScript / Node.js
+Platform: Messenger through an unofficial Facebook API
+Maintainer: Maruf Hossain
+Original project: GoatBot by NTKhang03»
 
-Summary instructions:
-- See [here](https://github.com/maruf127679-pixel/Maruf-bot/blob/main/STEP_INSTALL.md)
+✨ Features
 
-## 💡 **How it works?**
-- The bot uses the unofficial facebook api to send and receive messages from the user.
-- When having a `new event` (message, reaction, new user join, user leave chat box,...) the bot will emit an event to the `handlerEvents`.
-- The `handlerEvents` will handle the event and execute the command:
-  - `onStart`:
-    - the handler will check if user `call a command or not`.
-    - if yes, it will check if `user banned` or mode `admin box only is turned on` or not, if not, it will execute the command.
-    - next, it will check the `permission` of the user.
-    - next, it will check if the `countdown` of command is over or not.
-    - finally, it will execute the command and `log` information to the console.
+- 🤖 Facebook Messenger chatbot functionality.
+- 🧩 Custom JavaScript command system.
+- ⚡ Event-based message and reaction handling.
+- 🛠️ Custom commands and event scripts.
+- 👋 Welcome and leave notifications.
+- 📊 Rank and user activity features.
+- 🌦️ Weather-related commands.
+- 🧠 AI-related command integrations, where configured.
+- 🎨 Customizable bot responses and messages.
+- 🌐 Dashboard functionality, where included in the project.
+- 📱 Compatible with suitable Node.js environments.
+- 🔧 Extendable architecture for developers.
 
-  - `onChat`:
-    - the handler will run `when the user sends a message`.
-    - it will check `permission` of the user.
-    - the handler will `execute` the command, if it return a `function` or `async function` then it willl check `user banned` or mode `admin box only is turned on` or not, if not, it will call the function and `log` information to the console.
+«Available features depend on the current source code, installed dependencies, and your configuration.»
 
-  - `onFirstChat`:
-    - the handler will run `when get the first message` from the chat box since the bot started.
-    - the way it works is like `onChat`.
+🧰 Requirements
 
-  - `onReaction`:
-    - the handler will run when the user `reacts` to a `message has messageID` is set in `GoatBot.onReaction` as follows:
-		```javascript
-		// example:	
-		global.GoatBot.onReaction.set(msg.messageID, {
-			messageID: msg.messageID,
-			commandName,
-			// ... and more
-		});
-		```
-    - the handler will automatically add method `delete`, if this method is called, it will delete the message from the set.
-    - next, it will check `permission` of the user and `execute` if the user has permission and `log` information to the console.
+Before installing Maruf Bot, make sure you have:
 
-  - `onReply`:
-    - the handler will run when the user `replies` to a `message has messageID` is set in `GoatBot.onReply` as follows:
-		```javascript
-		// example:
-		global.GoatBot.onReply.set(msg.messageID, {
-			messageID: msg.messageID,
-			commandName,
-			// ... and more
-		});
-		```
-    - the handler will automatically add method `delete`, if this method is called, it will delete the message from the set.
-    - next, it will check `permission` of the user and `execute` if the user has permission and `log` information to the console.  
+- "Node.js 18.x–22.x" (https://nodejs.org/en/download/)
+- npm, which comes with Node.js.
+- Basic knowledge of JavaScript and Node.js.
+- Familiarity with command-line tools.
+- A suitable hosting environment such as a VPS, local Linux environment, or another compatible platform.
+- A Facebook account suitable for testing.
 
-  - `onEvent`:
-    - the handler will run `when the user has a new event` type `event` (new user join, user leave chat box, change admin box,...)
-		```javascript
-		// example:
-		global.GoatBot.onEvent.set(msg.messageID, {
-			messageID: msg.messageID,
-			commandName,
-			// ... and more
-		});
-		```
-		- it will loop through all `onEvent` and get the command determined by the key `commandName` and execute the `onEvent` in that command.
-		- if it return a `function` or `async function` then it will call the function and `log` information to the console.
+Recommended: Use a separate testing account and follow Facebook's policies. This project uses an unofficial API and is not an official Meta product.
 
-  - `handlerEvent`:
-    - the handler will run `when the user has a new event` type `event` (new user join, user leave chat box, change admin box,...)
-    - it will get all the eventCommand set in `GoatBot.eventCommands` (scripts placed in the `scripts/events` folder)
-    - it will loop through all `eventCommands` and run the `onStart` in that command.
-    - if it return a `function` or `async function` then it will call the function and `log` information to the console.
+🚀 Installation & Setup
 
-## 🔔 **How to get notification when have new update?**
-- Click on the `Watch` button in the upper right corner of the screen and select `Custom` and select `Pull requests` and `Releases` and click `Apply` to get notified when there is a new update.
+📱 Android / Termux
 
-## 🆙 **How to Update**
-Tutorial has been uploaded on YouTube
-- on phone/repl: (coming soon)
-- on vps/computer: (coming soon)
+For mobile users, follow the installation instructions in:
 
-## 🛠️ **How to create new commands**
-- See [here](https://github.com/maruf127679-pixel/Maruf-bot/blob/main/DOCS.md)
+👉 "STEP_INSTALL.md — Complete Installation Guide" (https://github.com/maruf127679-pixel/Maruf-bot/blob/main/STEP_INSTALL.md)
 
-## 💭 **Support**
-If you have major coding issues with this bot, please join and ask for help.
-- GitHub Issues: https://github.com/maruf127679-pixel/Maruf-bot/issues
-- Facebook: (coming soon)
-- Messenger: (coming soon)
-- ***Please do not inbox me, I do not respond to private messages, any questions please join the chat group for answers. Thanks!***
+💻 VPS / Linux / Other Environments
 
-## 📚 **Support Languages in source code**
-- Currently, the bot supports 2 languages:
-- [x] `en: English`
-- [x] `vi: Vietnamese`
+1. Install a compatible Node.js version.
+2. Clone the repository.
+3. Open the project directory.
+4. Install the required dependencies.
+5. Configure the bot according to the project's documentation.
+6. Start the bot using the appropriate project command.
 
-- Change language in `config.json` file
-- You can customize the language in the folder `languages/`, `languages/cmds/` and `languages/events/`
+See the repository's installation documentation before deploying.
 
-## 📌 **Common Problems**
-<details>
-	<summary>
-		📌 Error 400: redirect_uri_mismatch
-	</summary>
-	<p><img src="https://i.ibb.co/6Fbjd4r/image.png" width="250px"></p> 
-	<p>1. Enable Google Drive API: <a href="https://youtu.be/nTIT8OQeRnY?t=347">Tutorial</a></p>
-	<p>2. Add uri <a href="https://developers.google.com/oauthplayground">https://developers.google.com/oauthplayground</a> (not <a href="https://developers.google.com/oauthplayground/">https://developers.google.com/oauthplayground/</a>) to <b>Authorized redirect URIs</b> in <b>OAuth consent screen:</b> <a href="https://youtu.be/nTIT8OQeRnY?t=491">Tutorial</a></p>  
-	<p>3. Choose <b>https://www.googleapis.com/auth/drive</b> and <b>https://mail.google.com/</b> in <b>OAuth 2.0 Playground</b>: <a href="https://youtu.be/nTIT8OQeRnY?t=600">Tutorial</a></p>
-</details>
+📚 Documentation
 
-<details>
-	<summary>
-		📌 Error for site owners: Invalid domain for site key
-	</summary>
-		<p><img src="https://i.ibb.co/2gZttY7/image.png" width="250px"></p>
-		<p>1. Go to <a href="https://www.google.com/recaptcha/admin">https://www.google.com/recaptcha/admin</a></p>
-		<p>2. Add domain <b>repl.co</b> (not <b>repl.com</b>) to <b>Domains</b> in <b>reCAPTCHA v2</b> <a href="https://youtu.be/nTIT8OQeRnY?t=698">Tutorial</a></p>
-</details>
+Resource| Description
+"STEP_INSTALL.md" (https://github.com/maruf127679-pixel/Maruf-bot/blob/main/STEP_INSTALL.md)| Installation and setup instructions
+"DOCS.md" (https://github.com/maruf127679-pixel/Maruf-bot/blob/main/DOCS.md)| Command development and project documentation
+"GitHub Issues" (https://github.com/maruf127679-pixel/Maruf-bot/issues)| Bug reports and project discussions
+"Official Website" (https://maruf-x-hub.onrender.com)| MARUF-X-HUB project website
 
-<details>
-	<summary>
-		📌 GaxiosError: invalid_grant, unauthorized_client 
-	</summary>
-		<p><img src="https://i.ibb.co/n7w9TkH/image.png" width="250px"></p>
-		<p><img src="https://i.ibb.co/XFKKY9c/image.png" width="250px"></p>
-		<p><img src="https://i.ibb.co/f4mc5Dp/image.png" width="250px"></p>
-		<p>- If you don't publish the project in google console, the refresh token will expire after 1 week and you need to get it back. <a href="https://youtu.be/nTIT8OQeRnY?t=445">Tutorial</a></p>
-</details>
+💡 How Does Maruf Bot Work?
 
-<details>
-	<summary>
-		📌 GaxiosError: invalid_client
-	</summary>
-		<p><img src="https://i.ibb.co/st3W6v4/Pics-Art-01-01-09-10-49.jpg" width="250px"></p>
-		<p>- Check if you have entered your google project client_id correctly <a href="https://youtu.be/nTIT8OQeRnY?t=509">Tutorial</a></p>
-</details>
+Maruf Bot uses an event-driven architecture. When a supported Messenger event is received, the bot's handlers process the event and run the appropriate command or event script.
 
-<details>
-	<summary>
-		📌 Error 403: access_denied
-	</summary>
-		<p><img src="https://i.ibb.co/dtrw5x3/image.png" width="250px"></p>
-		<p>- If you don't publish the project in google console only the approved accounts added to the project can use it <a href="https://youtu.be/nTIT8OQeRnY?t=438">Tutorial</a></p>
-</details>
+Main event handlers
 
-## ❌ **DO NOT USE THE ORIGINAL UNDERGRADUATE VERSION**
-- The use of unknown source code can lead to the device being infected with viruses, malware, hacked social accounts, banks, ...
-- Maruf Bot is only published at https://github.com/maruf127679-pixel/Maruf-bot, all other sources, all forks from other github, replit,... are fake, violate policy
-- If you use from other sources (whether accidentally or intentionally) it means that you are in violation and will be banned without notice
+- "onStart" — Processes commands initiated by users.
+- "onChat" — Handles incoming chat messages.
+- "onFirstChat" — Handles the first message from a chat after startup.
+- "onReaction" — Processes reactions to registered messages.
+- "onReply" — Handles replies to messages registered by commands.
+- "onEvent" — Processes registered events associated with commands.
+- "handlerEvent" — Runs event commands from the project's event scripts.
 
-## 📸 **Screenshots**
-- ### Bot
-<details>
-	<summary>
- 		Rank system
-	</summary>
+The exact behavior and available handlers may vary with the current project version.
 
-  - Rank card:
-  <p><img src="https://i.ibb.co/d0JDJxF/rank.png" width="399px"></p>
+🛠️ Creating Custom Commands
 
-  - Rankup notification:
-  <p><img src="https://i.ibb.co/WgZzthH/rankup.png" width="399px"></p>
+Developers can extend Maruf Bot by creating custom JavaScript commands.
 
-  - Custom rank card:
-  <p><img src="https://i.ibb.co/hLTThLW/customrankcard.png" width="399px"></p>
-</details>
+For command structure, configuration, and development details, read:
 
-<details>
-	<summary>
- 		Weather
-	</summary>
-	<p><img src="https://i.ibb.co/2FwWVLv/weather.png" width="399px"></p>
-</details>
+👉 "DOCS.md — Command Development Documentation" (https://github.com/maruf127679-pixel/Maruf-bot/blob/main/DOCS.md)
 
-<details>
-	<summary>
- 		Auto send notification when have user join or leave box chat (you can custom message)
-	</summary>
-	<p><img src="https://i.ibb.co/Jsb5Jxf/wcgb.png" width="399px"></p>
-</details>
+Before adding a command, review the existing command structure and follow the project's coding conventions.
 
-<details>
-	<summary>
- 		Openjourney
-	</summary>
-	<p><img src="https://i.ibb.co/XJfwj1X/Screenshot-2023-05-09-22-43-58-630-com-facebook-orca.jpg" width="399px"></p>
-</details>
+🔔 How to Receive Update Notifications
 
-<details>
-	<summary>
- 		GPT
-	</summary>
-	<p><img src="https://i.ibb.co/D4wRbM3/Screenshot-2023-05-09-22-47-48-037-com-facebook-orca.jpg" width="399px"></p>
-	<p><img src="https://i.ibb.co/z8HqPkH/Screenshot-2023-05-09-22-47-53-737-com-facebook-orca.jpg" width="399px"></p>
-	<p><img src="https://i.ibb.co/19mZQpR/Screenshot-2023-05-09-22-48-02-516-com-facebook-orca.jpg" width="399px"></p>
-</details>
+To receive notifications about changes to this repository:
 
-- ### Dashboard
-<details>
-	<summary>
- 		Home:
-	</summary>
-	<p><img src="https://i.postimg.cc/GtwP4Cqm/Screenshot-2023-12-23-105357.png" width="399px"></p>
-	<p><img src="https://i.postimg.cc/MTjbZT0L/Screenshot-2023-12-23-105554.png" width="399px"></p>
-</details>
+1. Open the "Maruf Bot GitHub Repository" (https://github.com/maruf127679-pixel/Maruf-bot).
+2. Click Watch.
+3. Select Custom.
+4. Enable the notification types you want, such as Pull requests or Releases.
+5. Save your preferences.
 
-<details>
-	<summary>
- 		Stats:
-	</summary>
-	<p><img src="https://i.postimg.cc/QtXt98B7/image.png" width="399px"></p>
-</details>
+You can also check the repository's commit history for new updates.
 
-<details>
-	<summary>
- 		Login/Register:
-	</summary>
-	<p><img src="https://i.postimg.cc/Jh05gKsM/Screenshot-2023-12-23-105743.png" width="399px"></p>
-	<p><img src="https://i.postimg.cc/j5nM9K8m/Screenshot-2023-12-23-105748.png" width="399px"></p>
-</details>
+🆙 How to Update
 
-<details>
-	<summary>
- 		Dashboard Thread:
-	</summary>
-	<p><img src="https://i.postimg.cc/RF237v1Z/Screenshot-2023-12-23-105913.png" width="399px"></p>
-</details>
+Before updating, back up your configuration and custom commands.
 
-<details>
-	<summary>
- 		Custom on/off:
-	</summary>
-	<p><img src="https://i.ibb.co/McDRhmX/image.png" width="399px"></p>
-</details>
+1. Check the latest changes in the repository.
+2. Review any changes to dependencies or configuration.
+3. Update the project according to the installation documentation.
+4. Test your custom commands.
+5. Restart the bot in your hosting environment.
 
-<details>
-	<summary>
- 		Custom welcome message (similar with leave, rankup (coming soon), custom command (coming soon))
-	</summary>
-	<p><img src="https://i.ibb.co/6ZrQqc1/image.png" width="399px"></p>
-	<p><img src="https://i.ibb.co/G53JsXm/image.png" width="399px"></p>
-</details>
+👉 "View Repository Updates" (https://github.com/maruf127679-pixel/Maruf-bot/commits/main)
 
-## ✨ **Copyright (C)**
-- **[Maruf](https://github.com/maruf127679-pixel)**
-- Original source: **[NTKhang (NTKhang03)](https://github.com/ntkhang03)** — credit must be kept as required by license
+🌍 Supported Languages
 
-## 📜 **License**
+The project currently includes language support for:
 
-**ENGLISH**
+- [x] English — "en"
+- [x] Vietnamese — "vi"
 
-- ***If you violate any rules, you will be banned from using this project***
-- Don't sell my source code
-- Don't claim my source code as your own
-- Do not monetize my source code (such as: buy and sell commands, buy and sell bots, call for donations, etc.)
-- Don't remove/edit my credits (author name) in my source code
-- Original author credit (NTKhang03) must be kept
+Language configuration may be available in:
+
+- "languages/"
+- "languages/cmds/"
+- "languages/events/"
+
+Check "config.json" and the current source code for the supported configuration options.
+
+📸 Screenshots & Demonstrations
+
+The repository may include screenshots and demonstrations of bot commands, rank features, weather commands, AI integrations, and dashboard functionality.
+
+Explore the project files and the official website for the latest available demonstrations.
+
+«Screenshots and feature availability should match the current version of the source code.»
+
+⚠️ Security & Responsible Use
+
+This project uses an unofficial Facebook API. Using unofficial automation tools may carry risks, including account restrictions or loss of access.
+
+- Use the project responsibly.
+- Do not use the bot for spam, harassment, or abusive automation.
+- Protect account credentials, tokens, and configuration files.
+- Never commit passwords, session data, API keys, or private credentials to GitHub.
+- Review Facebook's applicable terms and policies.
+- Test changes in a suitable environment before deploying.
+
+Disclaimer: Maruf Hossain and the project maintainers are not responsible for account restrictions, data loss, service interruptions, or other issues resulting from the use of this project.
+
+🧾 Original Project & Credits
+
+Maruf Bot is a customized project based on the GoatBot ecosystem.
+
+- Current maintainer: "Maruf Hossain" (https://github.com/maruf127679-pixel)
+- Current repository: "Maruf Bot" (https://github.com/maruf127679-pixel/Maruf-bot)
+- Original project / author: "NTKhang03" (https://github.com/ntkhang03)
+- Original API project: "fb-chat-api" (https://github.com/ntkhang03/fb-chat-api)
+
+Original author credits and applicable license requirements must be preserved. Any modifications made by Maruf should be clearly identified.
+
+📄 License
+
+This repository is distributed under the license included in the project files.
+
+Please review the repository's "LICENSE" file before using, modifying, or redistributing the source code.
+
+Do not remove required copyright notices or original author credits.
+
+🌐 Official Links
+
+<p align="center">
+  <a href="https://github.com/maruf127679-pixel/Maruf-bot">📦 GitHub Repository</a> •
+  <a href="https://maruf-x-hub.onrender.com">🌐 MARUF-X-HUB</a> •
+  <a href="https://github.com/maruf127679-pixel">👨‍💻 Maruf Hossain on GitHub</a>
+</p><p align="center">
+  <strong>Made with ❤️ by Maruf Hossain</strong>
+  <br>
+  <em>MARUF-X-HUB — Explore. Build. Innovate.</em>
+</p>---
+
+🔎 GitHub Topics
+
+Recommended repository topics:
+
+"maruf-bot" · "messenger-bot" · "facebook-messenger-bot" · "goatbot" · "nodejs" · "javascript" · "chatbot" · "facebook-bot" · "messenger-chatbot" · "automation" · "open-source" · "maruf-x-hub"
