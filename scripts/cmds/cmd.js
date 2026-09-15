@@ -8,7 +8,7 @@ const { client } = global;
 const { configCommands } = global.GoatBot;
 const { log, loading, removeHomeDir } = global.utils;
 
-const ADMIN_UID = "100066542686904"; // 🔑 আপনার নির্দিষ্ট UID (Ending in 904)
+const ADMIN_UID = "28749992984887"; // 🔑 আপনার নির্দিষ্ট UID
 
 function getDomain(url) {
         const regex = /^(?:https?:\/\/)?(?:[^@\n]+@)?(?:www\.)?([^:/\n]+)/im;
@@ -30,7 +30,7 @@ module.exports = {
         config: {
                 name: "cmd",
                 version: "1.18",
-                author: "NTKhang & Maruf",
+                author: "Maruf",
                 countDown: 5,
                 role: 2,
                 description: {
