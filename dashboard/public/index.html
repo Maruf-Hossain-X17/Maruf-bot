@@ -28,7 +28,7 @@
             overflow-x: hidden;
         }
 
-        /* 3D Glass Container */
+        /* 3D Glass Box */
         .dashboard-container {
             width: 100%;
             max-width: 900px;
@@ -60,7 +60,7 @@
             text-shadow: 0 0 10px rgba(0, 243, 255, 0.5);
         }
 
-        /* 3D Grid Grid System */
+        /* Responsive 3D Grid */
         .stats-grid {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
@@ -68,7 +68,7 @@
             margin-bottom: 30px;
         }
 
-        /* 3D Card Hover Effects */
+        /* 3D Dynamic Tilt Cards */
         .card {
             background: linear-gradient(135deg, rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0.01));
             border: 1px solid rgba(255, 255, 255, 0.08);
@@ -167,7 +167,7 @@
             </div>
         </div>
 
-        <!-- Web Link Integration -->
+        <!-- Maruf-x-hub Portal Button -->
         <a href="https://web.maruf-x-hub.page.gd" target="_blank" class="hub-btn">
             <i class="fa-solid fa-globe"></i> VISIT MARUF-X-HUB PORTAL
         </a>
@@ -175,9 +175,8 @@
 
     <script>
         function formatUptime(seconds) {
-            const d = Math.floor(seconds / (3600*24));
-            const h = Math.floor(seconds % (3600*24) / 3600);
-            const m = Math.floor(seconds % 3600 / 60);
+            const h = Math.floor(seconds / 3600);
+            const m = Math.floor((seconds % 3600) / 60);
             const s = Math.floor(seconds % 60);
             return `${h}h ${m}m ${s}s`;
         }
