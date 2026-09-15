@@ -35,22 +35,22 @@
     "ignoreCommand": []
   },
   "adminBot": [
-    "100066542686904"
+    ""
   ],
   "mainAdmin": [
-    "100066542686904"
+    ""
   ],
   "whiteListMode": {
     "enable": false,
     "whiteListIds": [
-      "100066542686904",
-      "61556572161122"
+      "",
+      ""
     ]
   },
   "whiteListModeThread": {
     "enable": false,
     "whiteListThreadIds": [
-      "23900759299610016"
+      ""
     ]
   },
   "database": {
@@ -60,19 +60,7 @@
     "autoRefreshThreadInfoFirstTime": false
   },
   "timeZone": "Asia/Dhaka",
-  "credentials": {
-    "gmailAccount": {
-      "email": "botg1@gmail.com",
-      "clientId": "653155933669-v2fb0d9mp0n33qjii6bmohklfnvgbp3d.apps.googleusercontent.com",
-      "clientSecret": "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",
-      "refreshToken": "1//04nahBVNkK8X5CgYIARAAGAQSNwF-L9IrJ553uhsmXE0GBdKKAFaY8UpkSn7bBmZPQq65_VP3p2bdRNMxgZaCZG_kvDNaMUR4J7I",
-      "apiKey": ""
-    },
-    "gRecaptcha": {
-      "siteKey": "6Ldx9lUsAAAAABT1qlIgt2gnPomJIwSaxkBgJloU",
-      "secretKey": "6Ldx9lUsAAAAAEfqaNk1ZPYt2GK_Y93uDflSBgvW"
-    }
-  },
+
   "dashBoard": {
     "enable": false,
     "expireVerifyCode": 300000,
@@ -82,38 +70,45 @@
       "password": ""
     }
   },
+
   "serverUptime": {
     "enable": false,
     "port": 3001,
     "socket": {
       "enable": true,
       "channelName": "uptime",
-      "verifyToken": "stbotkey"
+      "verifyToken": ""
     }
   },
+
   "autoRestart": {
     "time": null,
     "logNoti": false
   },
+
   "autoUptime": {
     "enable": false,
     "timeInterval": 180,
     "url": ""
   },
+
   "autoLoadScripts": {
     "enable": false,
     "ignoreCmds": "",
     "ignoreEvents": ""
   },
+
   "autoRefreshFbstate": true,
   "autoReloginWhenChangeAccount": false,
   "autoRestartWhenListenMqttError": true,
+
   "restartListenMqtt": {
     "enable": true,
     "timeRestart": 7200000,
     "delayAfterStopListening": 2000,
     "logNoti": true
   },
+
   "notiWhenListenMqttError": {
     "gmail": {
       "enable": false,
@@ -129,6 +124,7 @@
       "webhookUrl": ""
     }
   },
+
   "botStartupNotification": {
     "enable": true,
     "sendToThreads": {
@@ -139,6 +135,7 @@
     },
     "message": "⚔️ Maruf Bot is now Online! Darkness has arrived."
   },
+
   "threadApproval": {
     "enable": false,
     "adminNotificationThreads": [],
@@ -147,6 +144,7 @@
     "sendThreadMessage": true,
     "autoApprovedThreads": []
   },
+
   "botLogging": {
     "enable": false,
     "sendToThreads": true,
@@ -156,6 +154,7 @@
     "logBotAdded": false,
     "logBotKicked": true
   },
+
   "githubIntegration": {
     "enable": false,
     "repoOwner": "",
@@ -176,6 +175,7 @@
       "database/data"
     ]
   },
+
   "hideNotiMessage": {
     "commandNotFound": false,
     "adminOnly": false,
@@ -185,6 +185,7 @@
     "needRoleToUseCmdOnReply": false,
     "needRoleToUseCmdOnReaction": false
   },
+
   "logEvents": {
     "disableAll": false,
     "message": true,
@@ -196,6 +197,7 @@
     "typ": false,
     "presence": false
   },
+
   "optionsFca": {
     "forceLogin": true,
     "listenEvents": true,
