@@ -7,11 +7,17 @@ const PORT = process.env.PORT || 3000;
 app.use(express.json());
 app.use(express.static(path.join(__dirname, 'public')));
 
-// Bot Stats Route
+// Dynamic Bot Stats API Endpoint
 app.get('/api/stats', (req, res) => {
-    // Apnar Bot er instance baseline dynamic data
-    const activeGroups = global.db?.groups?.length || 18; // Apnar bot code er group list or fallback count
-    const totalCommands = global.client?.commands?.size || 45; // Apnar bot er total commands count
+    // GoatBot v2 internal data structures fallback to global tracking
+    const activeGroups = global.db?.allThreadData?.length 
+                      || global.db?.threads?.size 
+                      || global.GoatBot?.threads?.size 
+                      || 0;
+
+    const totalCommands = global.GoatBot?.commands?.size 
+                        || global.GoatBot?.commandUtils?.commands?.size 
+                        || 0;
 
     res.json({
         status: 'ONLINE 🟢',
@@ -24,5 +30,5 @@ app.get('/api/stats', (req, res) => {
 });
 
 app.listen(PORT, () => {
-    console.log(`[DASHBOARD] 🚀 Glassmorphic 3D Dashboard running on port ${PORT}`);
+    console.log(`[DASHBOARD] 🚀 3D Glassmorphic Panel live on port ${PORT}`);
 });
