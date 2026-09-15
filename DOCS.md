@@ -1,408 +1,473 @@
-# 📚 Goat Bot V2 — Developer Documentation
+📚 Maruf Bot V2 — Developer Documentation
 
-> **Original Author:** [NTKhang03](https://github.com/ntkhang03) — Goat Bot V2 (MIT License)
-> **Source Code:** https://github.com/ntkhang03/Goat-Bot-V2
-> **Enhanced by:** [Maruf](https://github.com/maruf127679-pixel)
->
-> ⚠️ Original author credits preserved as required by MIT License.
-> Do not remove NTKhang03's name from any file.
+<p align="center">
+  <img src="https://files.catbox.moe/esqncp.jpg" alt="Maruf Bot Developer Documentation Banner" width="100%">
+</p><h1 align="center">🤖 Maruf Bot V2 — Developer Documentation</h1><p align="center">
+  <strong>Build • Customize • Learn • Innovate</strong>
+  <br>
+  A customized Facebook Messenger chatbot project powered by GoatBot technology.
+</p><p align="center">
+  <a href="https://web.maruf-x-hub.page.gd">🌐 Official Website</a> •
+  <a href="https://github.com/maruf127679-pixel/Maruf-bot">📦 Bot Repository</a> •
+  <a href="https://github.com/maruf127679-pixel/Maruf-bot/issues">💬 Support</a>
+</p><p align="center">
+  <img src="https://img.shields.io/badge/Node.js-18.x--22.x-brightgreen?style=for-the-badge&logo=node.js" alt="Node.js support">
+  <img src="https://img.shields.io/badge/Documentation-Maruf%20Bot-blue?style=for-the-badge" alt="Maruf Bot documentation">
+  <img src="https://img.shields.io/github/license/maruf127679-pixel/Maruf-bot?style=for-the-badge" alt="License">
+</p>---
 
----
+📖 About This Documentation
 
-## 📑 Table of Contents
+Welcome to the official Maruf Bot V2 Developer Documentation.
 
-- [🛠️ Built-in Functions (Utils)](#-built-in-functions-utils)
-- [🧠 Preparation](#-preparation)
-- [⚠️ Important Note](#️-important-note)
-- [💾 Database](#-database)
-  - [Config](#config)
-  - [Users Data](#-users-data)
-  - [Threads Data](#-threads-data)
-  - [Global Data](#-global-data)
-- [📦 Create New Command](#-create-new-command)
-  - [Basic Structure](#-basic-command-structure)
-  - [Handler Functions](#-handler-functions)
-  - [Handler Parameters](#-handler-parameters)
-  - [Example Commands](#-example-commands)
-- [🎯 Command Config Fields](#-command-config-fields)
-- [📁 Folder Structure](#-folder-structure)
-- [🎁 Reference Files](#-reference-files)
-- [📞 Common Errors & Fixes](#-common-errors--fixes)
-- [💡 Best Practices](#-best-practices)
-- [🔐 Security Guidelines](#-security-guidelines)
-- [✨ Credits & License](#-credits--license)
+This guide explains the project structure, command development, event handlers, database operations, utility functions, configuration, troubleshooting, and security practices.
 
----
+It is intended for developers who want to learn JavaScript, customize commands, and understand the architecture of the Maruf Bot project.
 
-## 🛠️ Built-in Functions (Utils)
+«Project: Maruf Bot V2
+Maintainer: Maruf Hossain
+Brand: MARUF-X-HUB
+Original project: Goat Bot V2 by NTKhang03
+Original license: MIT, subject to the actual upstream license and notices.»
 
-সব command এ `global.utils` object ব্যবহার করা যায়।
+Important Attribution
 
-| Function | কাজ | Example |
-|---|---|---|
-| `utils.getTime(format)` | সময় format | `utils.getTime("DD/MM/YYYY HH:mm")` |
-| `utils.convertTime(ms)` | ms → "1h 30m" | `utils.convertTime(5400000)` |
-| `utils.randomString(n)` | Random string | `utils.randomString(10)` |
-| `utils.randomNumber(min, max)` | Random number | `utils.randomNumber(1, 100)` |
-| `utils.getExtFromMimeType(mime)` | MIME → ext | `utils.getExtFromMimeType("image/png")` |
-| `utils.getExtFromUrl(url)` | URL → ext | `utils.getExtFromUrl("a.png")` |
-| `utils.jsonStringifyColor(obj)` | Colorful JSON log | `console.log(utils.jsonStringifyColor({a:1}))` |
-| `utils.translate(text, lang)` | Text translate | `utils.translate("Hello", "bn")` |
-| `utils.translateAPI(text, lang)` | Fast translate | `await utils.translateAPI("Hi", "bn")` |
-| `utils.findUid(fbLink)` | FB UID বের করা | `await utils.findUid("https://fb.com/...")` |
-| `utils.getStreamFromURL(url)` | URL → stream | `await utils.getStreamFromURL(imgUrl)` |
-| `utils.getStreamsFromAttachment(atts)` | Multiple streams | `await utils.getStreamsFromAttachment(event.attachments)` |
-| `utils.downloadFile(url, path)` | File download | `await utils.downloadFile(url, "./tmp/a.png")` |
-| `utils.uploadImgbb(stream)` | Image upload | `await utils.uploadImgbb(stream)` |
-| `utils.uploadZippyshare(stream)` | File upload | `await utils.uploadZippyshare(stream)` |
-| `utils.shortenURL(url)` | URL shorten | `await utils.shortenURL(longUrl)` |
-| `utils.getType(obj)` | Object type | `utils.getType([])` → "Array" |
-| `utils.isNumber(n)` | Number check | `utils.isNumber("5")` → true |
-| `utils.removeHomeDir(path)` | Path clean | `utils.removeHomeDir(__dirname)` |
-| `utils.splitPage(arr, n)` | Array pagination | `utils.splitPage([1,2,3,4], 2)` |
-| `utils.drive.uploadFile(name, mime, file)` | Google Drive upload | `await utils.drive.uploadFile("a.png", "image/png", stream)` |
-| `utils.drive.getFile(id)` | Drive download | `await utils.drive.getFile(fileId)` |
-| `utils.drive.deleteFile(id)` | Drive delete | `await utils.drive.deleteFile(fileId)` |
-| `utils.drive.getUrlDownload(id)` | Drive direct URL | `utils.drive.getUrlDownload(fileId)` |
+This project is based on the GoatBot ecosystem. The original author's name, copyright notices, license, and applicable attribution must remain intact.
 
-> 📖 সম্পূর্ণ list: [utils.js](https://github.com/ntkhang03/Goat-Bot-V2/blob/main/utils.js)
+- Original author: "NTKhang03" (https://github.com/ntkhang03)
+- Original source: "Goat-Bot-V2" (https://github.com/ntkhang03/Goat-Bot-V2)
+- Customized project: "Maruf Bot" (https://github.com/maruf127679-pixel/Maruf-bot)
 
 ---
 
-## 🧠 Preparation
+📑 Table of Contents
 
-### যা যা লাগবে
-
-- ✅ **Node.js 16.x+** — [Download](https://nodejs.org/en/download/)
-- ✅ **Code Editor** — VSCode (recommended), Sublime Text, Atom
-- ✅ **JavaScript Knowledge** — variables, functions, loops, arrays, objects, promises, async/await
-- ✅ **Node.js Basics** — `require`, `module.exports`
-- ✅ **Facebook Chat API** — [Unofficial API Docs](https://github.com/ntkhang03/fb-chat-api/blob/master/DOCS.md)
-
-### শেখার Resources
-
-- JavaScript: [MDN](https://developer.mozilla.org/en-US/docs/Web/JavaScript) | [W3Schools](https://www.w3schools.com/js/)
-- Node.js: [Official Docs](https://nodejs.org/en/docs/)
-- FCA API: [DOCS.md](https://github.com/ntkhang03/fb-chat-api/blob/master/DOCS.md)
-
----
-
-## ⚠️ Important Note
-
-**GoatBot এ কঠোরভাবে নিষিদ্ধ:**
-
-| Category | Result |
-|---|---|
-| 18+ Content | ❌ Permanent Ban |
-| Vulgarity / Obscenity | ❌ Permanent Ban |
-| Pornography | ❌ Permanent Ban |
-| Treason / Politics | ❌ Permanent Ban |
-| Any illegal content | ❌ Permanent Ban |
-
-**Custom command বানানোর সময় এই নিয়মগুলো মেনে চলো।**
+- "📖 About This Documentation" (#-about-this-documentation)
+- "🧠 Preparation" (#-preparation)
+- "🛠️ Built-in Functions" (#️-built-in-functions)
+- "⚠️ Important Usage Note" (#️-important-usage-note)
+- "💾 Database" (#-database)
+- "📦 Create a New Command" (#-create-a-new-command)
+- "🎯 Command Configuration" (#-command-configuration)
+- "📡 Event Handlers" (#-event-handlers)
+- "📁 Folder Structure" (#-folder-structure)
+- "🎁 Reference Files" (#-reference-files)
+- "📞 Common Errors" (#-common-errors)
+- "💡 Best Practices" (#-best-practices)
+- "🔐 Security Guidelines" (#-security-guidelines)
+- "🌐 Official Links" (#-official-links)
+- "✨ Credits and License" (#-credits-and-license)
 
 ---
 
-## 💾 Database
+🧠 Preparation
 
-### Config
+Requirements
 
-`config.json` এ `database.type` সেট করো:
+Before developing Maruf Bot, you should have:
 
-```json
-"database": {
+- Node.js compatible with the current "package.json".
+- npm.
+- A code editor such as VS Code, Sublime Text, or another JavaScript editor.
+- Basic JavaScript knowledge.
+- Basic Node.js knowledge.
+- Understanding of asynchronous programming.
+- Familiarity with the project's API and documentation.
+
+Recommended Learning Resources
+
+Resource| Link
+JavaScript — MDN| https://developer.mozilla.org/en-US/docs/Web/JavaScript
+JavaScript — W3Schools| https://www.w3schools.com/js/
+Node.js Documentation| https://nodejs.org/en/docs/
+Node.js Downloads| https://nodejs.org/en/download/
+Original GoatBot Project| https://github.com/ntkhang03/Goat-Bot-V2
+Facebook Chat API Documentation| https://github.com/ntkhang03/fb-chat-api/blob/master/DOCS.md
+
+---
+
+🛠️ Built-in Functions
+
+The project exposes utility functions through the "global.utils" object.
+
+«The exact functions available depend on the current version of the project. Always check the actual "utils.js" file before using a function.»
+
+Utility Reference
+
+Function| Description| Example
+"utils.getTime(format)"| Formats date and time| "utils.getTime("DD/MM/YYYY HH:mm")"
+"utils.convertTime(ms)"| Converts milliseconds to readable time| "utils.convertTime(5400000)"
+"utils.randomString(n)"| Generates a random string| "utils.randomString(10)"
+"utils.randomNumber(min, max)"| Generates a random number| "utils.randomNumber(1, 100)"
+"utils.getExtFromMimeType(mime)"| Gets extension from MIME type| "utils.getExtFromMimeType("image/png")"
+"utils.getExtFromUrl(url)"| Gets file extension from URL| "utils.getExtFromUrl("https://example.com/a.png")"
+"utils.jsonStringifyColor(obj)"| Formats JSON for colored console output| "utils.jsonStringifyColor({ a: 1 })"
+"utils.translate(text, lang)"| Translates text using the project's translation system| "utils.translate("Hello", "bn")"
+"utils.translateAPI(text, lang)"| Uses a translation API, if configured| "await utils.translateAPI("Hello", "bn")"
+"utils.findUid(fbLink)"| Resolves a Facebook link to a user ID, if supported| "await utils.findUid("https://facebook.com/...")"
+"utils.getStreamFromURL(url)"| Creates a readable stream from a URL| "await utils.getStreamFromURL(url)"
+"utils.getStreamsFromAttachment(atts)"| Gets streams from attachments| "await utils.getStreamsFromAttachment(atts)"
+"utils.downloadFile(url, path)"| Downloads a file| "await utils.downloadFile(url, "./tmp/file.png")"
+"utils.uploadImgbb(stream)"| Uploads an image, if configured| "await utils.uploadImgbb(stream)"
+"utils.shortenURL(url)"| Shortens a URL, if supported| "await utils.shortenURL(url)"
+"utils.getType(obj)"| Returns the object type| "utils.getType([])"
+"utils.isNumber(value)"| Checks whether a value is numeric| "utils.isNumber("5")"
+"utils.removeHomeDir(path)"| Removes the home directory prefix| "utils.removeHomeDir(__dirname)"
+"utils.splitPage(arr, n)"| Splits an array into pages| "utils.splitPage([1,2,3,4], 2)"
+
+Google Drive Utilities
+
+If Google Drive integration is installed and configured, the project may expose functions similar to:
+
+await utils.drive.uploadFile(name, mime, file);
+await utils.drive.getFile(fileId);
+await utils.drive.deleteFile(fileId);
+utils.drive.getUrlDownload(fileId);
+
+Check the actual implementation and configuration before using these functions.
+
+Full Utility Source
+
+👉 "View utils.js in the original project" (https://github.com/ntkhang03/Goat-Bot-V2/blob/main/utils.js)
+
+---
+
+⚠️ Important Usage Note
+
+Maruf Bot is intended for legitimate development, learning, and responsible automation.
+
+Do not use the bot for:
+
+- Spam or mass unsolicited messages.
+- Harassment or abuse.
+- Unauthorized access.
+- Fraud or impersonation.
+- Malicious or illegal activity.
+- Sharing private credentials.
+- Distributing harmful content.
+
+Some commands or integrations may have additional restrictions. Review the relevant platform rules and project configuration before enabling them.
+
+---
+
+💾 Database
+
+The project may support different database systems depending on the version and configuration.
+
+Database Configuration
+
+Check the actual "config.json" structure before changing database settings.
+
+A configuration may look similar to:
+
+{
+  "database": {
     "type": "sqlite",
     "uriMongodb": "",
     "autoSyncWhenStart": false,
     "autoRefreshThreadInfoFirstTime": false
+  }
 }
-```
 
-### Type Comparison
+«This is an example. Use the exact configuration keys supported by your installed version.»
 
-| Type | Pros | Cons | Recommended |
-|---|---|---|---|
-| **JSON** | Simple, no setup | Slow, unstable for large data | Small bot |
-| **SQLite** | No external DB, fast | File-based, disk issues | ✅ Small-medium |
-| **MongoDB** | Reliable, scalable | Needs setup + IP whitelist | ✅ Production |
+Database Comparison
+
+Database| Advantages| Limitations| Suitable for
+JSON| Simple and easy to understand| Not ideal for concurrent writes or large datasets| Small experiments
+SQLite| Local database with no external server| Requires reliable file storage| Small to medium projects
+MongoDB| Remote database and scalable architecture| Requires setup and secure access| Larger deployments
 
 ---
 
-### 👤 Users Data
+👤 Users Data
 
-#### Create User
-```javascript
-// Auto-create (FB API থেকে info নেয়)
+The "usersData" controller is used to manage user-related information.
+
+Create User
+
 const newUserData = await usersData.create(userID);
 
-// Manual info দিয়ে create (fast)
+If the current version supports manually supplied user information:
+
 const userInfo = (await api.getUserInfo(userID))[userID];
 const newUserData = await usersData.create(userID, userInfo);
-```
 
-#### Get User Data
-```javascript
+Get User Data
+
 const userData = await usersData.get(userID);
-console.log(userData.name);          // "Maruf Hossain"
-console.log(userData.userID);        // "100066542686904"
-console.log(userData.data.money);    // 100
-console.log(userData.banned.status); // false
-```
 
-#### Set User Data — ২টা উপায়
+console.log(userData);
 
-**উপায় ১: Path দিয়ে (recommended)**
-```javascript
-// Simple set
-await usersData.set(userID, { banned: true }, "data");
+A user record may contain fields such as:
 
-// Nested path
+console.log(userData.name);
+console.log(userData.userID);
+console.log(userData.data);
+console.log(userData.banned);
+
+The exact schema depends on the installed project version.
+
+Update User Data
+
+Example:
+
 await usersData.set(userID, {
-    name: "ABC",
-    birthday: "01/01/1999"
-}, "data.relationship.lover");
-
-// Multiple values
-await usersData.set(userID, { money: 500, exp: 200 }, "data");
-
-// Top-level (no path)
-await usersData.set(userID, { name: "New Name" });
-```
-
-**উপায় ২: Manual merge**
-```javascript
-const userData = await usersData.get(userID);
-userData.data.banned = true;
-await usersData.set(userID, { data: userData.data });
-```
-
-#### Useful Methods
-```javascript
-// সব users
-const allUsers = await usersData.getAll();
-
-// শুধু নাম
-const name = await usersData.getName(userID);
-
-// Avatar URL
-const avatarUrl = await usersData.getAvatarUrl(userID);
-
-// Refresh FB info (name, gender, vanity)
-await usersData.refreshInfo(userID);
-
-// Delete
-await usersData.remove(userID);
-
-// Exists check
-const exists = await usersData.existsSync(userID);
-```
-
----
-
-### 💬 Threads Data
-
-#### Create Thread
-```javascript
-// Auto-create (FB API থেকে info নেয়)
-const newThreadData = await threadsData.create(threadID);
-
-// Manual info দিয়ে create (fast)
-const threadInfo = await api.getThreadInfo(threadID);
-const newThreadData = await threadsData.create(threadID, threadInfo);
-```
-
-#### Get Thread Data
-```javascript
-const threadData = await threadsData.get(threadID);
-console.log(threadData.threadName);       // "My Group"
-console.log(threadData.adminIDs);         // ["1000...", "2000..."]
-console.log(threadData.data.welcome);     // "Hello!"
-console.log(threadData.members.length);   // 25
-console.log(threadData.isGroup);          // true
-```
-
-#### Set Thread Data
-```javascript
-// Simple string
-await threadsData.set(threadID, "Welcome!", "data.welcomeMessage");
-
-// Object
-await threadsData.set(threadID, {
-    welcome: "Hi {name}",
-    leave: "Bye {name}"
+    money: 500,
+    exp: 200
 }, "data");
 
-// Array
-await threadsData.set(threadID, ["user1", "user2"], "data.adminList");
-```
+Nested Data
 
-#### Refresh Thread Info
-```javascript
+await usersData.set(userID, {
+    birthday: "01/01/2000"
+}, "data.profile");
+
+Read All Users
+
+const allUsers = await usersData.getAll();
+console.log(allUsers);
+
+Other Methods
+
+Depending on the project version, methods may include:
+
+await usersData.getName(userID);
+await usersData.getAvatarUrl(userID);
+await usersData.refreshInfo(userID);
+await usersData.remove(userID);
+
+Check the actual controller implementation before relying on a method.
+
+---
+
+💬 Threads Data
+
+The "threadsData" controller manages thread or group information.
+
+Create Thread
+
+const threadData = await threadsData.create(threadID);
+
+Get Thread Data
+
+const threadData = await threadsData.get(threadID);
+
+console.log(threadData);
+
+Update Thread Data
+
+await threadsData.set(
+    threadID,
+    "Welcome to Maruf Bot!",
+    "data.welcomeMessage"
+);
+
+Store an Object
+
+await threadsData.set(
+    threadID,
+    {
+        welcome: "Welcome {name}!",
+        leave: "Goodbye {name}!"
+    },
+    "data"
+);
+
+Refresh Thread Information
+
 await threadsData.refreshInfo(threadID);
-// Updates: threadName, threadThemeID, emoji, adminIDs, imageSrc, members
-```
 
-#### Delete Thread
-```javascript
+Remove Thread Data
+
 await threadsData.remove(threadID);
-```
 
 ---
 
-### 🌍 Global Data
+🌍 Global Data
 
-```javascript
-// Get global value
-const value = await globalData.get("key", "data", {});
+Global data can be used for project-wide values.
 
-// Set global value
-await globalData.set("key", { someData: "value" }, "data");
+Get Data
 
-// Example: Analytics
-const analytics = await globalData.get("analytics", "data", {});
-analytics.commandCount = (analytics.commandCount || 0) + 1;
-await globalData.set("analytics", analytics, "data");
-```
+const analytics = await globalData.get(
+    "analytics",
+    "data",
+    {}
+);
+
+Update Data
+
+analytics.commandCount =
+    (analytics.commandCount || 0) + 1;
+
+await globalData.set(
+    "analytics",
+    analytics,
+    "data"
+);
+
+«Use the exact "globalData" API exposed by your installed project.»
 
 ---
 
-## 📦 Create New Command
+📦 Create a New Command
 
-### 📁 File Location
+📁 Command Location
 
-```
-scripts/cmds/mycommand.js       ← Bot এ load হবে
-scripts/cmds/mycommand.eg.js    ← Bot এ load হবে না (template)
-```
+Most GoatBot-style projects load commands from a folder similar to:
 
-### 📄 Basic Command Structure
+scripts/
+└── cmds/
+    ├── help.js
+    ├── rank.js
+    ├── balance.js
+    └── mycommand.js
 
-```javascript
-module.exports = {
-    config: {
-        name: "mycommand",           // Command name
-        version: "1.0.0",
-        author: "Maruf",             // তোমার নাম
-        countDown: 3,                // Cooldown (seconds)
-        role: 0,                     // 0=everyone, 1=admin box, 2=admin bot
-        description: "Short description",
-        category: "utility",
-        guide: "{pn} <arg1> [arg2]"  // {pn} = prefix+name
-    },
+Files ending in ".eg.js" are commonly used as examples or templates and may not be loaded as commands.
 
-    langs: {
-        en: {
-            greeting: "Hello %1! You are %2 years old.",
-            error: "❌ Error: %1"
-        },
-        vi: {
-            greeting: "Xin chào %1! Bạn %2 tuổi."
-        }
-    },
+Check your loader implementation for the exact rules.
 
-    onStart: async function ({ message, event, args, api, usersData, threadsData, getLang }) {
-        // তোমার code
-        return message.reply("Hello!");
-    }
-};
-```
+---
 
-### 🎯 Handler Functions
+📄 Basic Command Structure
 
-| Handler | কখন run হয় | Use case |
-|---|---|---|
-| `onStart` | User command call করলে | Normal commands |
-| `onChat` | প্রতি message এ | Auto-responders |
-| `onFirstChat` | প্রথম message এ | Welcome message |
-| `onReply` | User reply দিলে | Multi-step commands |
-| `onReaction` | User react করলে | Interactive commands |
-| `onEvent` | New user join/leave | Event handlers |
-| `onAnyEvent` | যেকোনো event | Logging, monitoring |
-
-### 📝 Handler Parameters
-
-```javascript
-onStart: async function ({
-    api,              // Facebook API (sendMessage, etc.)
-    event,            // Message event
-    message,          // Helper: message.reply/send/unsend/reaction
-    args,             // Command arguments array
-    commandName,      // "mycommand"
-    prefix,           // "+"
-    role,             // User role (0/1/2)
-    userData,         // Current user data
-    threadData,       // Current thread data
-    usersData,        // User controller
-    threadsData,      // Thread controller
-    globalData,       // Global data
-    dashBoardData,    // Dashboard data
-    envCommands,      // Env for commands
-    envEvents,        // Env for events
-    envGlobal,        // Global env
-    getLang,          // Language function
-    removeCommandNameFromBody,  // Helper
-    isUserCallCommand // true if user called this command
-}) { /* ... */ }
-```
-
-### 🎁 Example Commands
-
-#### Example 1: Simple Reply
-
-```javascript
 module.exports = {
     config: {
         name: "hello",
         version: "1.0.0",
         author: "Maruf",
+        countDown: 3,
         role: 0,
-        description: "Say hello",
+        description: "Send a greeting",
+        category: "utility",
+        guide: "{pn} [name]"
+    },
+
+    langs: {
+        en: {
+            greeting: "Hello %1!"
+        }
+    },
+
+    onStart: async function ({
+        message,
+        args
+    }) {
+        const name = args[0] || "there";
+
+        return message.reply(`👋 Hello, ${name}!`);
+    }
+};
+
+Important Fields
+
+- "config": Command metadata.
+- "onStart": Main command handler.
+- "langs": Optional language strings.
+- "message": Message helper.
+- "args": User-provided command arguments.
+
+---
+
+🎯 Command Configuration
+
+Field| Type| Description
+"name"| String| Command name
+"version"| String| Command version
+"author"| String| Command author
+"countDown"| Number| Cooldown in seconds
+"role"| Number/Object| Permission level
+"description"| String| Short command description
+"category"| String| Command category
+"guide"| String| Usage instructions
+"langs"| Object| Language strings
+"envConfig"| Object| Command-specific configuration
+"dependencies"| Object| Additional dependencies, if supported
+
+Role Levels
+
+The meaning of role values depends on the project configuration. A common arrangement is:
+
+0 = Everyone
+1 = Group administrator
+2 = Bot administrator
+
+Example:
+
+config: {
+    name: "admincommand",
+    version: "1.0.0",
+    author: "Maruf",
+    role: 2,
+    description: "Administrator command",
+    category: "admin"
+}
+
+---
+
+🎁 Example Commands
+
+Example 1 — Simple Greeting
+
+module.exports = {
+    config: {
+        name: "hello",
+        version: "1.0.0",
+        author: "Maruf",
+        countDown: 3,
+        role: 0,
+        description: "Send a greeting",
         category: "utility",
         guide: "{pn} [name]"
     },
 
     onStart: async function ({ message, args }) {
         const name = args[0] || "there";
-        return message.reply(`👋 Hello, ${name}!`);
+
+        return message.reply(
+            `👋 Hello, ${name}! Welcome to Maruf Bot.`
+        );
     }
 };
-```
 
-#### Example 2: Money System
+Example 2 — Balance Command
 
-```javascript
 module.exports = {
     config: {
         name: "balance",
         version: "1.0.0",
         author: "Maruf",
+        countDown: 3,
         role: 0,
         description: "Check your balance",
         category: "economy",
         guide: "{pn}"
     },
 
-    onStart: async function ({ message, event, usersData }) {
-        const { senderID } = event;
-        const userData = await usersData.get(senderID);
+    onStart: async function ({
+        message,
+        event,
+        usersData
+    }) {
+        const userID = event.senderID;
+        const userData = await usersData.get(userID);
 
-        // ✅ Null-safe access
-        const money = userData?.data?.money || 0;
-        const exp = userData?.data?.exp || 0;
+        const data = userData?.data || {};
+        const money = Number(data.money) || 0;
+        const exp = Number(data.exp) || 0;
 
         return message.reply(
-            `╭───「 𝗕𝗔𝗟𝗔𝗡𝗖𝗘 」───\n` +
+            `╭───「 MARUF BOT 」───\n` +
             `│ 💰 Money: ${money}\n` +
             `│ ⭐ EXP: ${exp}\n` +
             `╰──────────────────`
         );
     }
 };
-```
 
-#### Example 3: Daily Bonus
+Example 3 — Daily Bonus
 
-```javascript
 module.exports = {
     config: {
         name: "daily",
@@ -410,41 +475,53 @@ module.exports = {
         author: "Maruf",
         countDown: 5,
         role: 0,
-        description: "Get daily reward",
-        category: "economy"
+        description: "Claim a daily reward",
+        category: "economy",
+        guide: "{pn}"
     },
 
-    onStart: async function ({ message, event, usersData }) {
-        const { senderID } = event;
-        const userData = await usersData.get(senderID);
+    onStart: async function ({
+        message,
+        event,
+        usersData
+    }) {
+        const userID = event.senderID;
+        const userData = await usersData.get(userID);
 
-        const lastDaily = userData?.data?.lastDaily || 0;
+        const data = userData?.data || {};
+        const lastDaily = Number(data.lastDaily) || 0;
         const now = Date.now();
-        const ONE_DAY = 24 * 60 * 60 * 1000;
+        const oneDay = 24 * 60 * 60 * 1000;
 
-        if (now - lastDaily < ONE_DAY) {
-            const remain = ONE_DAY - (now - lastDaily);
-            const hours = Math.floor(remain / 3600000);
-            const minutes = Math.floor((remain % 3600000) / 60000);
-            return message.reply(`⏳ Already claimed! Come back in ${hours}h ${minutes}m.`);
+        if (now - lastDaily < oneDay) {
+            const remaining = oneDay - (now - lastDaily);
+            const hours = Math.floor(remaining / 3600000);
+            const minutes = Math.floor(
+                (remaining % 3600000) / 60000
+            );
+
+            return message.reply(
+                `⏳ You have already claimed your reward.\n` +
+                `Try again in ${hours}h ${minutes}m.`
+            );
         }
 
-        const reward = Math.floor(Math.random() * 500) + 100;
-        const currentMoney = userData?.data?.money || 0;
+        const reward = Math.floor(Math.random() * 401) + 100;
+        const currentMoney = Number(data.money) || 0;
 
-        await usersData.set(senderID, {
+        await usersData.set(userID, {
             money: currentMoney + reward,
             lastDaily: now
         }, "data");
 
-        return message.reply(`🎁 Daily reward: +${reward} coins!`);
+        return message.reply(
+            `🎁 Daily reward: +${reward} coins!`
+        );
     }
 };
-```
 
-#### Example 4: Welcome Event
+Example 4 — Welcome Event
 
-```javascript
 module.exports = {
     config: {
         name: "welcome",
@@ -455,60 +532,83 @@ module.exports = {
         category: "events"
     },
 
-    onEvent: async function ({ api, event, message, threadsData }) {
-        const { logMessageType, logMessageData, threadID } = event;
+    onStart: async function ({
+        api,
+        event,
+        message
+    }) {
+        if (event.logMessageType !== "log:subscribe") {
+            return;
+        }
 
-        if (logMessageType !== "log:subscribe") return;
+        const addedParticipants =
+            event.logMessageData?.addedParticipants || [];
 
-        const threadData = await threadsData.get(threadID);
-        const welcomeMsg = threadData?.data?.welcomeMessage || "Welcome {name}!";
+        for (const participant of addedParticipants) {
+            const userID = participant.userFbId;
 
-        for (const uid of logMessageData.addedParticipants.map(p => p.userFbId)) {
-            if (uid === api.getCurrentUserID()) continue;
-            const name = (await api.getUserInfo(uid))[uid].name;
-            const finalMsg = welcomeMsg.replace(/{name}/g, name);
-            await message.send(finalMsg);
+            if (String(userID) === String(api.getCurrentUserID())) {
+                continue;
+            }
+
+            const userInfo = await api.getUserInfo(userID);
+            const name = userInfo?.[userID]?.name || "friend";
+
+            await message.send(
+                `👋 Welcome to the group, ${name}!`
+            );
         }
     }
 };
-```
 
-#### Example 5: Send Image/Sticker
+Example 5 — Send an Image
 
-```javascript
 module.exports = {
     config: {
-        name: "sticker",
+        name: "image",
         version: "1.0.0",
         author: "Maruf",
         role: 0,
-        description: "Send a sticker",
-        category: "fun"
+        description: "Send an image",
+        category: "media"
     },
 
-    onStart: async function ({ message, utils }) {
-        const stickerUrl = "https://example.com/sticker.gif";
-        const stream = await utils.getStreamFromURL(stickerUrl);
-        return message.reply({ attachment: stream });
+    onStart: async function ({
+        message,
+        utils
+    }) {
+        const imageURL = "https://example.com/image.jpg";
+
+        const stream = await utils.getStreamFromURL(imageURL);
+
+        return message.reply({
+            attachment: stream
+        });
     }
 };
-```
 
-#### Example 6: Reply Handler
+«Replace the example URL with a legitimate, accessible image URL.»
 
-```javascript
+Example 6 — Reply Handler
+
 module.exports = {
     config: {
         name: "ask",
         version: "1.0.0",
         author: "Maruf",
         role: 0,
-        description: "Ask a question",
+        description: "Ask for a name",
         category: "fun"
     },
 
-    onStart: async function ({ message, event }) {
-        const sent = await message.reply("What is your name?");
+    onStart: async function ({
+        message,
+        event
+    }) {
+        const sent = await message.reply(
+            "What is your name?"
+        );
+
         global.GoatBot.onReply.set(sent.messageID, {
             commandName: "ask",
             messageID: sent.messageID,
@@ -516,28 +616,36 @@ module.exports = {
         });
     },
 
-    onReply: async function ({ message, event }) {
-        const answer = event.body;
-        return message.reply(`Nice to meet you, ${answer}!`);
+    onReply: async function ({
+        message,
+        event
+    }) {
+        return message.reply(
+            `Nice to meet you, ${event.body || "friend"}!`
+        );
     }
 };
-```
 
-#### Example 7: Reaction Handler
+Example 7 — Reaction Handler
 
-```javascript
 module.exports = {
     config: {
         name: "react",
         version: "1.0.0",
         author: "Maruf",
         role: 0,
-        description: "React to message",
+        description: "Respond to a reaction",
         category: "fun"
     },
 
-    onStart: async function ({ message, event }) {
-        const sent = await message.reply("React with 👍 to continue!");
+    onStart: async function ({
+        message,
+        event
+    }) {
+        const sent = await message.reply(
+            "React with 👍 to continue!"
+        );
+
         global.GoatBot.onReaction.set(sent.messageID, {
             commandName: "react",
             messageID: sent.messageID,
@@ -545,207 +653,247 @@ module.exports = {
         });
     },
 
-    onReaction: async function ({ message, event }) {
+    onReaction: async function ({
+        message,
+        event
+    }) {
         if (event.reaction === "👍") {
-            return message.reply("Thanks for reacting!");
+            return message.reply(
+                "Thanks for reacting! 🤖"
+            );
         }
     }
 };
-```
 
 ---
 
-## 🎯 Command Config Fields
+📡 Event Handlers
 
-| Field | Type | Required | Description |
-|---|---|---|---|
-| `name` | String | ✅ | Command name |
-| `version` | String | ✅ | Version (e.g., "1.0.0") |
-| `author` | String | ✅ | তোমার নাম |
-| `countDown` | Number | ❌ | Cooldown in seconds (default: 1) |
-| `role` | Number/Object | ❌ | `0`=all, `1`=admin box, `2`=admin bot |
-| `description` | String | ❌ | Short description |
-| `category` | String | ❌ | "utility" / "fun" / "economy" |
-| `guide` | String | ❌ | Usage guide ({pn} = prefix+name) |
-| `langs` | Object | ❌ | Multi-language texts |
-| `envConfig` | Object | ❌ | Command config |
-| `dependencies` | Object | ❌ | Required npm packages |
+The available handlers depend on the current GoatBot version.
 
-### Role Config — Object Form
+Handler| Purpose
+"onStart"| Runs when a command is called
+"onChat"| Processes incoming messages
+"onFirstChat"| Processes the first message in a chat after startup
+"onReply"| Handles replies to registered messages
+"onReaction"| Handles reactions to registered messages
+"onEvent"| Handles registered events
+"onAnyEvent"| Available only if implemented by the project
 
-```javascript
-role: {
-    onStart: 0,      // Command call — everyone
-    onChat: 1,       // On chat — admin box only
-    onReply: 1,      // On reply — admin box only
-    onReaction: 0    // On reaction — everyone
-}
-```
+General Event Flow
 
-### envConfig Example
+Messenger Event
+       │
+       ▼
+Event Handler
+       │
+       ▼
+Command / Event Lookup
+       │
+       ▼
+Permission Check
+       │
+       ▼
+Cooldown Check
+       │
+       ▼
+Execute Handler
+       │
+       ▼
+Send Response / Log Result
 
-```javascript
-config: {
-    name: "setwelcome",
-    envConfig: {
-        defaultWelcome: "Welcome {name}!",
-        maxLength: 2000
-    }
-}
-
-// Usage:
-onStart: async function ({ envCommands, message }) {
-    const cfg = envCommands["setwelcome"];
-    console.log(cfg.defaultWelcome);
-}
-```
+«This is a conceptual overview. The actual event flow may differ between project versions.»
 
 ---
 
-## 📁 Folder Structure
+📁 Folder Structure
 
-```
-scripts/
-├── cmds/                          ← Commands
-│   ├── help.js
-│   ├── rank.js
-│   ├── balance.js
-│   ├── daily.js
-│   ├── newcommand.eg.js           ← Template
+A typical GoatBot-style project may contain:
+
+Maruf-bot/
+├── scripts/
+│   ├── cmds/
+│   │   ├── help.js
+│   │   ├── rank.js
+│   │   ├── balance.js
+│   │   ├── daily.js
+│   │   └── newcommand.eg.js
+│   │
+│   ├── events/
+│   │   ├── welcome.js
+│   │   ├── leave.js
+│   │   └── newcommandevent.eg.js
+│   │
 │   └── ...
-├── events/                        ← Event commands
-│   ├── welcome.js
-│   ├── leave.js
-│   ├── newcommandevent.eg.js
-│   └── ...
-└── ...
-```
+│
+├── languages/
+├── config.json
+├── package.json
+├── DOCS.md
+├── STEP_INSTALL.md
+└── README.md
+
+The exact structure depends on the current repository version.
 
 ---
 
-## 🎁 Reference Files
+🎁 Reference Files
 
-| File | Link |
-|---|---|
-| Command Template | [newcommand.eg.js](https://github.com/ntkhang03/Goat-Bot-V2/blob/main/scripts/cmds/newcommand.eg.js) |
-| Event Template | [newcommandevent.eg.js](https://github.com/ntkhang03/Goat-Bot-V2/blob/main/scripts/events/newcommandevent.eg.js) |
-| Example Commands | [cmds folder](https://github.com/ntkhang03/Goat-Bot-V2/tree/main/scripts/cmds) |
-| Utils API | [utils.js](https://github.com/ntkhang03/Goat-Bot-V2/blob/main/utils.js) |
-| FCA API | [DOCS.md](https://github.com/ntkhang03/fb-chat-api/blob/master/DOCS.md) |
-
-### VSCode Snippets
-
-`scripts/cmds/` বা `scripts/events/` folder এর `.js` ফাইলে type করো:
-
-| Snippet | Result |
-|---|---|
-| `GoatBotCommandCreate` | নতুন command template |
-| `GoatBotEventCreate` | নতুন event template |
-| `GoatBotCommandSetOnReply` | onReply handler যোগ |
-| `GoatBotCommandSetOnReaction` | onReaction handler যোগ |
-| `GoatBotCommandPushOnEvent` | onEvent handler যোগ |
-| `GoatBotCommandSetOnChat` | onChat handler যোগ |
-
-Press <kbd>Tab</kbd> to jump between placeholders.
+Resource| Link
+Maruf Bot Repository| https://github.com/maruf127679-pixel/Maruf-bot
+Original GoatBot Repository| https://github.com/ntkhang03/Goat-Bot-V2
+Original Command Template| https://github.com/ntkhang03/Goat-Bot-V2/blob/main/scripts/cmds/newcommand.eg.js
+Original Event Template| https://github.com/ntkhang03/Goat-Bot-V2/blob/main/scripts/events/newcommandevent.eg.js
+Original Commands Folder| https://github.com/ntkhang03/Goat-Bot-V2/tree/main/scripts/cmds
+Facebook Chat API Documentation| https://github.com/ntkhang03/fb-chat-api/blob/master/DOCS.md
+Maruf Bot Installation Guide| https://github.com/maruf127679-pixel/Maruf-bot/blob/main/STEP_INSTALL.md
+Maruf Bot Official Website| https://web.maruf-x-hub.page.gd
 
 ---
 
-## 📞 Common Errors & Fixes
+📞 Common Errors & Fixes
 
-| Error | কারণ | Fix |
-|---|---|---|
-| `Cannot read properties of undefined` | Null/undefined access | `?.` optional chaining |
-| `Cannot read properties of null (reading 'settings')` | Placeholder data নেই | `userData?.settings \|\| {}` |
-| `Cannot find module 'xxx'` | Package missing | `dependencies` এ যোগ করো |
-| `xxx is not a function` | Function typo | সঠিক function name check |
-| Command load হয় না | File extension `.eg.js` | `.js` করো |
-| `await` কাজ করে না | Function `async` না | `async function` করো |
-| `database create failed` | DB write timeout | handlerCheckData non-blocking |
-| Infinite loop | Circular dependency | Self-require বাদ দাও |
-| `SQLITE_CANTOPEN` | Storage path ভুল | `storage: dbPath` ব্যবহার করো |
+Error| Possible cause| Suggested action
+"Cannot find module 'xxx'"| Dependency missing| Install the required package according to the project documentation
+"Cannot read properties of undefined"| Missing or unexpected data| Validate the value before accessing it
+"xxx is not a function"| Wrong API or function name| Check the actual implementation
+Command does not load| Incorrect file or loader rules| Check the command path and file extension
+"await" syntax error| Function is not asynchronous| Use an appropriate "async" function
+Database write failure| Storage or database issue| Check the database configuration and logs
+"SQLITE_CANTOPEN"| Invalid database path or permissions| Verify the database path and write permissions
+Dashboard does not open| Incorrect port or deployment configuration| Check the hosting logs and port settings
+Authentication error| Invalid or expired credentials| Review the supported authentication method securely
+
+Debugging Checklist
+
+1. Read the complete error message.
+2. Check the line number shown in the stack trace.
+3. Confirm the Node.js version.
+4. Check installed dependencies.
+5. Review recent code changes.
+6. Test in a controlled environment.
+7. Avoid exposing private credentials in logs or screenshots.
 
 ---
 
-## 💡 Best Practices
+💡 Best Practices
 
-### 1. Null-Safe Access (সবসময়)
-```javascript
+1. Validate Data
+
 const data = userData?.data || {};
 const money = Number(data.money) || 0;
-```
 
-### 2. Error Isolation
-```javascript
-try { /* risky code */ }
-catch (err) { console.error("[cmd]", err.message); }
-```
+2. Use Error Handling
 
-### 3. Non-Blocking DB Writes
-```javascript
-(async () => {
-    try { await usersData.set(...); } catch (_) {}
-})();
-```
-
-### 4. Cooldown Add করো
-```javascript
-config: { countDown: 5 }  // 5s cooldown
-```
-
-### 5. Role Check
-```javascript
-config: { role: 2 }  // admin bot only
-```
-
-### 6. Language Support
-```javascript
-langs: {
-    en: { hello: "Hello %1!" },
-    bn: { hello: "হ্যালো %1!" }
+try {
+    const result = await someAsyncOperation();
+    console.log(result);
+} catch (error) {
+    console.error("[Maruf Bot]", error.message);
 }
-// Usage: getLang("hello", "Maruf")
-```
 
-### 7. Timeout for External APIs
-```javascript
-const result = await Promise.race([
-    someSlowAPI(),
-    new Promise((_, rej) => setTimeout(() => rej(new Error("timeout")), 5000))
-]);
-```
+3. Keep Commands Small
 
----
+Separate large commands into helper functions or modules when appropriate.
 
-## 🔐 Security Guidelines
+4. Use Cooldowns
 
-### ❌ যা করা যাবে না
+config: {
+    countDown: 5
+}
 
-- `eval()` / `Function()` দিয়ে untrusted code চালানো
-- `child_process.exec()` shell command (Facebook message থেকে)
-- `.env` বা `config.json` এ secrets publicly share
-- GitHub token চ্যাট এ বা log এ পাঠানো
-- `npm install` runtime এ (memory spike)
+5. Apply Permission Checks
 
-### ✅ যা করা উচিত
+config: {
+    role: 2
+}
 
-- `try/catch` সব risky operation এ
-- `role: 2` admin-only commands এ
-- Validated input সবসময়
-- Environment variables secrets এর জন্য
-- Memory limit set (`--max-old-space-size`)
+Use the permission model supported by your project.
 
----
+6. Avoid Blocking Operations
 
-## ✨ Credits & License
+Do not perform unnecessary heavy computation or synchronous file operations inside frequently executed handlers.
 
-**Original Author:** [NTKhang03](https://github.com/ntkhang03)
-**Source:** [Goat-Bot-V2](https://github.com/ntkhang03/Goat-Bot-V2)
-**License:** MIT — Original credits must be preserved
+7. Validate External API Responses
 
-**Enhanced Documentation by:** [Maruf](https://github.com/maruf127679-pixel)
+if (!result || typeof result !== "object") {
+    return message.reply("❌ Invalid API response.");
+}
+
+8. Keep Dependencies Updated Carefully
+
+Review changelogs and test updates before applying them to a production bot.
 
 ---
 
-⚠️ **এই documentation ব্যবহার করার সময় NTKhang03 এর credit রাখতে হবে। এটা MIT License এর শর্ত।**
+🔐 Security Guidelines
 
-**Custom command বানানোর সময় কোনো সমস্যা হলে বলো — আমি full code দিব।**
+Never Do This
+
+- Do not expose Facebook session data or login credentials.
+- Do not commit ".env" files containing secrets.
+- Do not publish API keys, refresh tokens, or client secrets.
+- Do not execute untrusted input through "eval()" or "Function()".
+- Do not run shell commands directly from untrusted Messenger messages.
+- Do not install unknown packages without reviewing them.
+- Do not store private credentials in public GitHub issues.
+- Do not use the bot for spam, abuse, or unauthorized activity.
+
+Recommended Practices
+
+- Store secrets in environment variables or a secure secret manager.
+- Use administrator permissions for sensitive commands.
+- Validate user input.
+- Keep dependencies reviewed and updated.
+- Restrict access to administrative functions.
+- Maintain backups of important data.
+- Review logs for accidental credential exposure.
+- Test changes before production deployment.
+
+Example: Environment Variable
+
+const apiKey = process.env.MY_API_KEY;
+
+if (!apiKey) {
+    throw new Error("MY_API_KEY is not configured.");
+}
+
+Do not hard-code private API keys in your source code.
+
+---
+
+🌐 Official Links
+
+<p align="center">
+  <a href="https://web.maruf-x-hub.page.gd">🌐 MARUF-X-HUB Website</a>
+  <br>
+  <a href="https://github.com/maruf127679-pixel/Maruf-bot">📦 Maruf Bot GitHub Repository</a>
+  <br>
+  <a href="https://github.com/maruf127679-pixel">👨‍💻 Maruf Hossain GitHub Profile</a>
+</p>---
+
+✨ Credits and License
+
+Original Project
+
+- Original author: "NTKhang03" (https://github.com/ntkhang03)
+- Original source: "Goat-Bot-V2" (https://github.com/ntkhang03/Goat-Bot-V2)
+- Original license: MIT, according to the upstream project.
+
+Customized Project
+
+- Maintainer: "Maruf Hossain" (https://github.com/maruf127679-pixel)
+- Project: "Maruf Bot" (https://github.com/maruf127679-pixel/Maruf-bot)
+- Brand: MARUF-X-HUB
+
+Original credits, license notices, and applicable attribution must be preserved. Review the actual license files before redistributing or modifying the project.
+
+---
+
+<p align="center">
+  <strong>🚀 MARUF-X-HUB — Explore. Build. Innovate.</strong>
+  <br>
+  Made with ❤️ by Maruf Hossain
+</p><p align="center">
+  ⭐ If this project helps you learn, consider supporting the repository with constructive feedback.
+</p>
