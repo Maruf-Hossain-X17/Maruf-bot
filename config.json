@@ -35,22 +35,22 @@
     "ignoreCommand": []
   },
   "adminBot": [
-    "100066542686904"
+    ""
   ],
   "mainAdmin": [
-    "100066542686904"
+    ""
   ],
   "whiteListMode": {
     "enable": false,
     "whiteListIds": [
-      "100066542686904",
-      "61556572161122"
+      "",
+      ""
     ]
   },
   "whiteListModeThread": {
     "enable": false,
     "whiteListThreadIds": [
-      "23900759299610016"
+      ""
     ]
   },
   "database": {
