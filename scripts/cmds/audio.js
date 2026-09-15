@@ -7,7 +7,7 @@ module.exports = {
     name: "audio",
     aliases: ["getaudio", "extractaudio"],
     version: "1.0",
-    author: "Nyx",
+    author: "maruf",
     countDown: 5,
     role: 0,
     shortDescription: "ভিডিও থেকে অডিও বের করবে",
