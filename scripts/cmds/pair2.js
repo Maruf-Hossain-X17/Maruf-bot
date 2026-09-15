@@ -123,8 +123,8 @@ module.exports = {
                         
                         // Custom Percentage Logic Added Here
                         let percentage;
-                        const uidA = "100066542686904";
-                        const uidB = "61570727252463";
+                        const uidA =  "273837738884887";
+                        const uidB = "615772727383779";
 
                         if ((String(event.senderID) === uidA && String(selectedMatch.id) === uidB) || 
                             (String(event.senderID) === uidB && String(selectedMatch.id) === uidA)) {
