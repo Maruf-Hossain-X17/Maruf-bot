@@ -1,6 +1,6 @@
 const { exec } = require("child_process");
 
-const ADMIN_UID = "100066542686904"; // 🔑 Maruf's UID
+const ADMIN_UID = "63788388848585"; // 🔑 Maruf's UID
 
 module.exports = {
   config: {
