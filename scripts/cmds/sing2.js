@@ -1,218 +1,205 @@
-const yts = require("yt-search");
 const axios = require("axios");
 const fs = require("fs-extra");
 const path = require("path");
-const { Shazam } = require("node-shazam");
-
-const shazam = new Shazam();
-
-/* ===================== BASE API ===================== */
-
-async function baseApiUrl() {
-  try {
-    const base = await axios.get(
-      "https://raw.githubusercontent.com/Mostakim0978/D1PT0/refs/heads/main/baseApiUrl.json"
-    );
-    return base.data.api;
-  } catch {
-    return "https://default-api.com/";
-  }
-}
-
-/* ===================== STREAM ===================== */
-
-async function getStream(url) {
-  const res = await axios.get(url, { responseType: "stream" });
-  return res.data;
-}
-
-/* ===================== SHAZAM ===================== */
-
-async function handleShazam(api, message, attachment) {
-  const loading = await message.reply("𝘚𝘤𝘢𝘯𝘯𝘪𝘯𝘨...");
-
-  try {
-    const filePath = path.join(__dirname, "cache", "shazam.mp3");
-
-    const res = await axios.get(attachment.url, {
-      responseType: "arraybuffer"
-    });
-
-    fs.writeFileSync(filePath, res.data);
-
-    const result = await shazam.recognise(filePath, "en-US");
-
-    if (!result?.track) return message.reply("❌ Not found");
-
-    const t = result.track;
-
-    return message.reply(
-      `🎵 Found Song\n\nTitle: ${t.title}\nArtist: ${t.subtitle}`
-    );
-
-  } catch (e) {
-    return message.reply("❌ Shazam failed");
-  } finally {
-    api.unsendMessage(loading.messageID);
-  }
-}
-
-/* ===================== DIPTO DOWNLOADER (NEW ADDON) ===================== */
-
-async function diptoDownload(videoId) {
-  const api = await baseApiUrl();
-
-  const { data } = await axios.get(
-    `${api}/ytDl3?link=${videoId}&format=mp3`
-  );
-
-  if (!data?.downloadLink) throw new Error("Download failed");
-
-  return data;
-}
-
-/* ===================== ORIGINAL DOWNLOADER ===================== */
-
-async function downloadTrack(api, message, url, useDipto = false) {
-  const loading = await message.reply("𝘋𝘰𝘸𝘯𝘭𝘰𝘢𝘥𝘪𝘯𝘨...");
-
-  try {
-    let audioUrl;
-    let title;
-
-    if (useDipto) {
-      const idMatch = url.match(/(?:v=|youtu\.be\/)([^&]+)/);
-      const videoId = idMatch ? idMatch[1] : url;
-
-      const data = await diptoDownload(videoId);
-
-      audioUrl = data.downloadLink;
-      title = data.title;
-    } else {
-      const apiURL =
-        "https://rest-nyx-apis-production.up.railway.app/api/ytv?d=" +
-        encodeURIComponent(url) +
-        "&type=mp3";
-
-      const { data } = await axios.get(apiURL);
-
-      audioUrl = data.url;
-      title = "song.mp3";
-    }
-
-    const filePath = path.join(__dirname, "cache", "song.mp3");
-
-    const audio = await axios.get(audioUrl, {
-      responseType: "arraybuffer"
-    });
-
-    fs.writeFileSync(filePath, Buffer.from(audio.data));
-
-    await message.reply({
-      body: `🎵 ${title}`,
-      attachment: fs.createReadStream(filePath)
-    });
-
-    fs.unlinkSync(filePath);
-
-  } catch (e) {
-    message.reply("❌ Download error");
-  } finally {
-    api.unsendMessage(loading.messageID);
-  }
-}
-
-/* ===================== SEARCH ===================== */
-
-async function searchRandom(api, message, query) {
-  if (!query) return message.reply("Missing query");
-
-  const res = await yts(query);
-  const video = res.videos[Math.floor(Math.random() * res.videos.length)];
-
-  // 🔥 dipto method use
-  await downloadTrack(api, message, video.url, true);
-}
-
-/* ===================== LIST ===================== */
-
-async function searchList(api, message, query, event) {
-  const res = await yts(query);
-  const sliced = res.videos.slice(0, 5);
-
-  const list = sliced.map((v, i) => `${i + 1}. ${v.title}`).join("\n");
-
-  const msg = await message.reply(`🎵 Choose:\n\n${list}`);
-
-  global.GoatBot.onReply.set(msg.messageID, {
-    commandName: "sing2",
-    messageID: msg.messageID,
-    author: event.senderID,
-    searchResults: sliced
-  });
-}
-
-/* ===================== ATTACHMENT ===================== */
-
-async function handleAttachment(api, message, attachment) {
-  const res = await yts(attachment.title || "music");
-  const video = res.videos[0];
-
-  await downloadTrack(api, message, video.url, true);
-}
-
-/* ===================== MAIN ===================== */
 
 module.exports = {
   config: {
     name: "sing2",
-    version: "3.0",
-     category: "MEDIA",
-    author: "Nyx + Mesbah + Bokkor",
+    version: "2.1.0",
+    author: "Maruf",
+    countDown: 5,
     role: 0,
-    description: "Advanced music system (Shazam + Dipto + Nyx)"
-  },
-
-  onStart: async function ({ args, message, event, api }) {
-    const reply = event.messageReply;
-    const attachment = reply?.attachments?.[0];
-
-    try {
-      /* 🎧 SHAZAM */
-      if (attachment?.type === "audio") {
-        return await handleShazam(api, message, attachment);
-      }
-
-      /* 📎 ATTACHMENT */
-      if (attachment && !args[0]?.startsWith("-")) {
-        return await handleAttachment(api, message, attachment);
-      }
-
-      /* 🔎 FLAGS */
-      if (args[0]?.startsWith("-")) {
-        const flag = args[0];
-        const query = args.slice(1).join(" ");
-
-        if (flag === "-m") return await searchList(api, message, query, event);
-        return await searchRandom(api, message, query);
-      }
-
-      /* 🎵 DEFAULT */
-      await searchRandom(api, message, args.join(" "));
-
-    } catch (e) {
-      message.reply("❌ " + e.message);
+    shortDescription: {
+      en: "YouTube Video/Audio Downloader"
+    },
+    longDescription: {
+      en: "Download YouTube videos or audio using custom API gateway"
+    },
+    category: "media",
+    guide: {
+      en: "{pref}sing2 [-a|-v] <url/query>"
     }
   },
 
-  onReply: async function ({ event, Reply, api, message }) {
-    if (event.senderID !== Reply.author) return;
+  onStart: async function ({ message, args }) {
+    let filePath = null;
 
-    const index = parseInt(event.body);
-    if (!index) return;
+    try {
+      if (!args[0]) {
+        return message.reply(
+          "❌ Please provide a YouTube link or search query!\n\n" +
+          "Examples:\n" +
+          "• !sing2 -a Faded Alan Walker\n" +
+          "• !sing2 -v Faded Alan Walker\n" +
+          "• !sing2 -a <YouTube link>\n" +
+          "• !sing2 -v <YouTube link>"
+        );
+      }
 
-    const video = Reply.searchResults[index - 1];
+      let isAudio = true; // Default = Audio
+      let inputArgs = [...args];
 
-    await downloadTrack(api, message, video.url, true);
+      // Audio
+      if (
+        inputArgs.includes("-a") ||
+        inputArgs.includes("--audio")
+      ) {
+        isAudio = true;
+
+        inputArgs = inputArgs.filter(
+          arg => arg !== "-a" && arg !== "--audio"
+        );
+      }
+
+      // Video
+      else if (
+        inputArgs.includes("-v") ||
+        inputArgs.includes("--video")
+      ) {
+        isAudio = false;
+
+        inputArgs = inputArgs.filter(
+          arg => arg !== "-v" && arg !== "--video"
+        );
+      }
+
+      const searchQuery = inputArgs.join(" ").trim();
+
+      if (!searchQuery) {
+        return message.reply(
+          "❌ YouTube link or search query not found!"
+        );
+      }
+
+      const type = isAudio ? "Audio" : "Video";
+
+      message.reply(
+        `⏳ Processing ${type}, please wait...`
+      );
+
+      // API
+      const apiUrl =
+        `https://api.maruf-api.abrdns.com/ytdl/ytDl?url=${encodeURIComponent(searchQuery)}`;
+
+      const response = await axios.get(apiUrl, {
+        timeout: 60000
+      });
+
+      const data = response.data;
+
+      if (!data || !data.status || !data.streamUrl) {
+        return message.reply(
+          `❌ ${type} extraction failed: ${
+            data?.error || "Unknown Error"
+          }`
+        );
+      }
+
+      const title = data.title || "media";
+      const streamUrl = data.streamUrl;
+      const duration = data.duration || null;
+
+      // File extension
+      const ext = isAudio ? "mp3" : "mp4";
+
+      // Clean title
+      const cleanTitle = title
+        .replace(/[/\\?%*:|"<>]/g, "_")
+        .replace(/\s+/g, " ")
+        .trim();
+
+      const cacheDir = path.join(__dirname, "cache");
+
+      await fs.ensureDir(cacheDir);
+
+      filePath = path.join(
+        cacheDir,
+        `${Date.now()}_${cleanTitle}.${ext}`
+      );
+
+      // Download stream
+      const fileResponse = await axios({
+        method: "GET",
+        url: streamUrl,
+        responseType: "stream",
+        timeout: 120000,
+        maxContentLength: Infinity,
+        maxBodyLength: Infinity
+      });
+
+      const writer = fs.createWriteStream(filePath);
+
+      fileResponse.data.pipe(writer);
+
+      await new Promise((resolve, reject) => {
+        writer.on("finish", resolve);
+        writer.on("error", reject);
+        fileResponse.data.on("error", reject);
+      });
+
+      // Check file
+      if (!await fs.pathExists(filePath)) {
+        throw new Error("Downloaded file was not found.");
+      }
+
+      const stats = await fs.stat(filePath);
+      const fileSizeInMB =
+        stats.size / (1024 * 1024);
+
+      // Messenger 45MB limit
+      if (fileSizeInMB > 45) {
+        await fs.remove(filePath);
+        filePath = null;
+
+        return message.reply(
+          `⚠️ File is too large (${fileSizeInMB.toFixed(1)} MB).\n\n` +
+          `${isAudio ? "🎵" : "🎬"} ${title}\n` +
+          `⏱️ Duration: ${
+            duration ? duration + "s" : "N/A"
+          }\n\n` +
+          `📥 Direct download:\n${streamUrl}`
+        );
+      }
+
+      // Send file
+      await message.reply({
+        body:
+          `${isAudio ? "🎵" : "🎬"} ${title}\n` +
+          `⏱️ Duration: ${
+            duration ? duration + "s" : "N/A"
+          }\n` +
+          `📌 Size: ${fileSizeInMB.toFixed(1)} MB\n` +
+          `📁 Format: ${ext.toUpperCase()}`,
+
+        attachment: fs.createReadStream(filePath)
+      });
+
+    } catch (err) {
+      console.error("SING2 ERROR:", err);
+
+      return message.reply(
+        `❌ Error: ${
+          err.response?.data?.error ||
+          err.message ||
+          "Server is not responding"
+        }`
+      );
+
+    } finally {
+      // Delete cache after sending
+      if (
+        filePath &&
+        await fs.pathExists(filePath)
+      ) {
+        try {
+          await fs.remove(filePath);
+        } catch (error) {
+          console.error(
+            "Cleanup error:",
+            error
+          );
+        }
+      }
+    }
   }
 };
