@@ -1,0 +1,25 @@
+[
+	{
+		"version": "1.5.35",
+		"files": {
+			"README.md": "fork: Maruf Bot initial release based on Goat Bot V2 by NTKhang03",
+			"package.json": "fork: renamed to maruf-bot, added request dependency, engines 18-22",
+			"Dockerfile": "fork: multi-stage build, non-root user, health check",
+			".dockerignore": "fork: exclude secrets and node_modules",
+			".gitignore": "fork: exclude config.json, account.txt, backups",
+			"Goat.js": "fork: exponential backoff, graceful shutdown, crash recovery",
+			"index.js": "fork: express hardening, /health endpoint, /api/appstate auth",
+			"updater.js": "fork: point to Maruf-bot repo, retry, backup rotation",
+			"updater-launcher.js": "fork: new file — downloads and runs updater safely",
+			"utils.js": "fork: retry logic, timeout, better error handling",
+			"autoUptime.js": "fork: drift-free scheduler, jitter, graceful shutdown",
+			"bot/handler/handlerAction.js": "fork: error isolation, safe reaction handling",
+			"bot/handler/handlerCheckData.js": "fork: race condition fix, timeout, memory bound",
+			"bot/handler/handlerEvents.js": "fork: regex escape, no mutation, cleanup timers",
+			"bot/login/loadData.js": "fork: batching, splice bug fix, error isolation",
+			"bot/login/login.js": "fork: disable external GBAN/version checks",
+			"fb-chat-api/index.js": "fork: bug fixes, c_user priority, safe URL parsing",
+			"fb-chat-api/utils.js": "fork: null-safe formatters, cross-platform parse"
+		}
+	}
+]

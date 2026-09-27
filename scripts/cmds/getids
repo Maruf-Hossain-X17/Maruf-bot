@@ -1,0 +1,22 @@
+module.exports = {
+  config: {
+    name: "getids",
+    version: "1.0",
+    author: "ChatGPT",
+    role: 2,
+    shortDescription: "List all thread IDs",
+    category: "admin",
+    guide: "{pn}"
+  },
+
+  onStart: async function ({ message, threadsData }) {
+    const allThreads = await threadsData.getAll();
+    if (!allThreads.length) return message.reply("❌ কোনো থ্রেড পাওয়া যায়নি।");
+
+    const result = allThreads
+      .map(thread => `${thread.threadName || "Unnamed"}: ${thread.threadID}`)
+      .join("\n");
+
+    return message.reply("📋 Thread List:\n\n" + result);
+  }
+};
