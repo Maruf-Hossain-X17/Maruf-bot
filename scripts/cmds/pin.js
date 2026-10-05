@@ -1,319 +1,1116 @@
-/**
- * @author Mahi--
- * pinterest.js — Pinterest image search with canvas view
- * Fixed by Maruf — onStart rename, alias conflict, description format, safe cleanup
- * Original author credit preserved as required by MIT license.
- */
-
 const axios = require("axios");
-const { createCanvas, loadImage } = require("canvas");
 const fs = require("fs-extra");
 const path = require("path");
-const { getStreamFromURL } = global.utils;
+const Jimp = require("jimp");
 
-async function generatePinterestCanvas(imageObjects, query, page, totalPages) {
-	const canvasWidth = 800;
-	const canvasHeight = 1600;
-	const canvas = createCanvas(canvasWidth, canvasHeight);
-	const ctx = canvas.getContext("2d");
+const COMMAND_NAME = "pin";
 
-	ctx.fillStyle = "#1e1e1e";
-	ctx.fillRect(0, 0, canvasWidth, canvasHeight);
+const CACHE_DIR = path.join(__dirname, "cache");
 
-	ctx.fillStyle = "#ffffff";
-	ctx.font = "24px Arial";
-	ctx.textAlign = "left";
-	ctx.fillText("🔍 Pinterest Searcher", 20, 45);
+const API_CONFIG_URL =
+  "https://raw.githubusercontent.com/Ma1ru2f3/Api-base/refs/heads/main/baseApiUrl.json";
 
-	ctx.font = "16px Arial";
-	ctx.fillStyle = "#b0b0b0";
-	ctx.fillText(`Search results of "${query}", Showing up to ${imageObjects.length} images.`, 20, 75);
+const FALLBACK_API =
+  "https://api.maruf-api.abrdns.com/pin";
 
-	const numColumns = 3;
-	const padding = 15;
-	const columnWidth = (canvasWidth - padding * (numColumns + 1)) / numColumns;
-	const columnHeights = Array(numColumns).fill(100);
+const MAX_LIMIT = 36;
+const DEFAULT_LIMIT = 6;
+const SESSION_TIME = 2 * 60 * 1000;
 
-	const loadedPairs = await Promise.all(
-		imageObjects.map((obj) =>
-			loadImage(obj.url)
-				.then((img) => ({ img, originalIndex: obj.originalIndex, url: obj.url }))
-				.catch((e) => {
-					console.error(`Failed to load image: ${obj.url}`, e && e.message);
-					return null;
-				})
-		)
-	);
+const REQUEST_HEADERS = {
+  "User-Agent":
+    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 " +
+    "(KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36",
+  Accept: "image/avif,image/webp,image/apng,image/*,*/*;q=0.8"
+};
 
-	const successful = loadedPairs.filter((x) => x !== null);
 
-	if (successful.length === 0) {
-		ctx.fillStyle = "#ff6666";
-		ctx.font = "16px Arial";
-		ctx.fillText(`No images could be loaded for this page.`, 20, 110);
-		const cacheDir = path.join(__dirname, "cache");
-		await fs.ensureDir(cacheDir);
-		const outputPath = path.join(cacheDir, `pinterest_page_${Date.now()}.png`);
-		fs.writeFileSync(outputPath, canvas.toBuffer("image/png"));
-		return { outputPath, displayedMap: [] };
-	}
+// ============================================================
+// HELPERS
+// ============================================================
 
-	let displayNumber = 0;
-	const displayedMap = [];
+function normalizeBaseUrl(url) {
+  if (!url || typeof url !== "string") {
+    return FALLBACK_API;
+  }
 
-	for (let i = 0; i < successful.length; i++) {
-		const { img, originalIndex } = successful[i];
-
-		const minHeight = Math.min(...columnHeights);
-		const columnIndex = columnHeights.indexOf(minHeight);
-
-		const x = padding + columnIndex * (columnWidth + padding);
-		const y = minHeight + padding;
-
-		const scale = columnWidth / img.width;
-		const scaledHeight = img.height * scale;
-
-		ctx.drawImage(img, x, y, columnWidth, scaledHeight);
-
-		displayNumber += 1;
-		displayedMap.push(originalIndex);
-
-		ctx.fillStyle = "rgba(0, 0, 0, 0.5)";
-		ctx.fillRect(x, y, 50, 24);
-
-		ctx.fillStyle = "#ffffff";
-		ctx.font = "bold 14px Arial";
-		ctx.textAlign = "center";
-		ctx.textBaseline = "middle";
-		ctx.fillText(`#${displayNumber}`, x + 25, y + 12);
-
-		ctx.fillStyle = "#b0b0b0";
-		ctx.font = "10px Arial";
-		ctx.textAlign = "right";
-		ctx.textBaseline = "alphabetic";
-		ctx.fillText(`${img.width} x ${img.height}`, x + columnWidth - 6, y + scaledHeight - 6);
-
-		columnHeights[columnIndex] += scaledHeight + padding;
-	}
-
-	ctx.fillStyle = "#ffffff";
-	ctx.font = "bold 18px Arial";
-	ctx.textAlign = "center";
-	const footerY = Math.max(...columnHeights) + 40;
-	ctx.fillText(`Anchestor - Page ${page}/${totalPages}`, canvasWidth / 2, footerY);
-
-	const cacheDir = path.join(__dirname, "cache");
-	await fs.ensureDir(cacheDir);
-	const outputPath = path.join(cacheDir, `pinterest_page_${Date.now()}_${Math.floor(Math.random() * 99999)}.png`);
-	fs.writeFileSync(outputPath, canvas.toBuffer("image/png"));
-
-	return { outputPath, displayedMap };
+  return url.trim().replace(/\/+$/, "");
 }
 
-// ————— safe unlink helper —————
-async function safeUnlink(filePath) {
-	try { await fs.remove(filePath); } catch (_) {}
+
+function parseInput(args) {
+  let input = Array.isArray(args)
+    ? args.join(" ").trim()
+    : "";
+
+  let limit = DEFAULT_LIMIT;
+
+  /*
+   * Supported:
+   * !pin naruto
+   * !pin naruto - 20
+   * !pin naruto -20
+   * !pin naruto _20
+   * !pin naruto 20
+   */
+
+  const match = input.match(
+    /(?:^|\s)(?:[-_]\s*)?(\d+)\s*$/
+  );
+
+  if (match) {
+    limit = parseInt(match[1], 10);
+
+    input = input
+      .slice(0, match.index)
+      .trim();
+  }
+
+  if (!Number.isFinite(limit) || limit < 1) {
+    limit = DEFAULT_LIMIT;
+  }
+
+  limit = Math.min(limit, MAX_LIMIT);
+
+  return {
+    query: input,
+    limit
+  };
 }
+
+
+function isValidImageUrl(url) {
+  if (typeof url !== "string") {
+    return false;
+  }
+
+  try {
+    const parsed = new URL(url);
+
+    return (
+      parsed.protocol === "http:" ||
+      parsed.protocol === "https:"
+    );
+  } catch {
+    return false;
+  }
+}
+
+
+function extractImages(data) {
+  if (!data || typeof data !== "object") {
+    return [];
+  }
+
+  let images = [];
+
+  if (Array.isArray(data.images)) {
+    images = data.images;
+  } else if (Array.isArray(data.data)) {
+    images = data.data;
+  } else if (Array.isArray(data.results)) {
+    images = data.results;
+  }
+
+  return [
+    ...new Set(
+      images
+        .map(item => {
+          if (typeof item === "string") {
+            return item;
+          }
+
+          if (item && typeof item === "object") {
+            return (
+              item.url ||
+              item.image ||
+              item.imageUrl ||
+              item.src ||
+              item.original ||
+              null
+            );
+          }
+
+          return null;
+        })
+        .filter(isValidImageUrl)
+    )
+  ];
+}
+
+
+async function getPinterestApi() {
+  try {
+    const response = await axios.get(API_CONFIG_URL, {
+      timeout: 8000,
+      headers: {
+        "User-Agent": "Mozilla/5.0"
+      }
+    });
+
+    const configuredUrl =
+      response.data?.apis?.pin?.url;
+
+    return normalizeBaseUrl(
+      configuredUrl || FALLBACK_API
+    );
+
+  } catch (error) {
+    console.error(
+      "[PIN] Failed to load API config:",
+      error.message
+    );
+
+    return FALLBACK_API;
+  }
+}
+
+
+async function downloadImage(url) {
+  const response = await axios.get(url, {
+    responseType: "arraybuffer",
+    timeout: 20000,
+    maxContentLength: 15 * 1024 * 1024,
+    maxBodyLength: 15 * 1024 * 1024,
+    headers: REQUEST_HEADERS,
+    validateStatus: status =>
+      status >= 200 && status < 300
+  });
+
+  const contentType =
+    String(response.headers["content-type"] || "")
+      .toLowerCase();
+
+  if (
+    contentType &&
+    !contentType.startsWith("image/")
+  ) {
+    throw new Error(
+      `Invalid content type: ${contentType}`
+    );
+  }
+
+  const buffer = Buffer.from(response.data);
+
+  if (!buffer.length) {
+    throw new Error("Empty image response");
+  }
+
+  return buffer;
+}
+
+
+function getGridSettings(count) {
+  let cols;
+
+  if (count <= 4) {
+    cols = 2;
+  } else if (count <= 12) {
+    cols = 3;
+  } else {
+    cols = 4;
+  }
+
+  const rows = Math.ceil(count / cols);
+
+  let tileSize;
+
+  if (count <= 6) {
+    tileSize = 400;
+  } else if (count <= 12) {
+    tileSize = 320;
+  } else if (count <= 24) {
+    tileSize = 280;
+  } else {
+    tileSize = 240;
+  }
+
+  const gap = 12;
+
+  return {
+    cols,
+    rows,
+    tileW: tileSize,
+    tileH: tileSize,
+    gap
+  };
+}
+
+
+async function createCollage(images) {
+  const {
+    cols,
+    rows,
+    tileW,
+    tileH,
+    gap
+  } = getGridSettings(images.length);
+
+  const totalW =
+    cols * tileW +
+    (cols + 1) * gap;
+
+  const totalH =
+    rows * tileH +
+    (rows + 1) * gap;
+
+  const collage = new Jimp(
+    totalW,
+    totalH,
+    0x111111FF
+  );
+
+  const numberFont =
+    await Jimp.loadFont(
+      Jimp.FONT_SANS_32_WHITE
+    );
+
+  /*
+   * Download in parallel.
+   * This is significantly faster than downloading
+   * every image one by one.
+   */
+  const results = await Promise.allSettled(
+    images.map(url => downloadImage(url))
+  );
+
+  let successful = 0;
+
+  for (let i = 0; i < results.length; i++) {
+    const col = i % cols;
+    const row = Math.floor(i / cols);
+
+    const x =
+      gap + col * (tileW + gap);
+
+    const y =
+      gap + row * (tileH + gap);
+
+    const result = results[i];
+
+    if (result.status !== "fulfilled") {
+      drawFailedTile(
+        collage,
+        numberFont,
+        x,
+        y,
+        tileW,
+        tileH,
+        i + 1
+      );
+
+      console.error(
+        `[PIN] Image ${i + 1} failed:`,
+        result.reason?.message || result.reason
+      );
+
+      continue;
+    }
+
+    try {
+      const img =
+        await Jimp.read(result.value);
+
+      img.cover(
+        tileW,
+        tileH,
+        Jimp.HORIZONTAL_ALIGN_CENTER |
+        Jimp.VERTICAL_ALIGN_MIDDLE
+      );
+
+      collage.blit(img, x, y);
+
+      drawNumberBadge(
+        collage,
+        numberFont,
+        x,
+        y,
+        i + 1
+      );
+
+      successful++;
+
+    } catch (error) {
+      console.error(
+        `[PIN] Failed processing image ${i + 1}:`,
+        error.message
+      );
+
+      drawFailedTile(
+        collage,
+        numberFont,
+        x,
+        y,
+        tileW,
+        tileH,
+        i + 1
+      );
+    }
+  }
+
+  if (successful === 0) {
+    throw new Error("ALL_IMAGES_FAILED");
+  }
+
+  return collage;
+}
+
+
+function drawNumberBadge(
+  collage,
+  font,
+  x,
+  y,
+  number
+) {
+  const badgeSize = 64;
+
+  const badge = new Jimp(
+    badgeSize,
+    badgeSize,
+    0x000000CC
+  );
+
+  collage.blit(
+    badge,
+    x + 12,
+    y + 12
+  );
+
+  const text = String(number);
+
+  let textX;
+
+  if (text.length === 1) {
+    textX = x + 32;
+  } else if (text.length === 2) {
+    textX = x + 22;
+  } else {
+    textX = x + 12;
+  }
+
+  collage.print(
+    font,
+    textX,
+    y + 24,
+    text
+  );
+}
+
+
+function drawFailedTile(
+  collage,
+  font,
+  x,
+  y,
+  width,
+  height,
+  number
+) {
+  const placeholder = new Jimp(
+    width,
+    height,
+    0x252525FF
+  );
+
+  collage.blit(
+    placeholder,
+    x,
+    y
+  );
+
+  /*
+   * Don't use ✕ here because Jimp's bitmap font
+   * may not contain that Unicode glyph.
+   */
+  collage.print(
+    font,
+    x + 20,
+    y + 20,
+    String(number)
+  );
+}
+
+
+async function safeDelete(filePath) {
+  if (!filePath) {
+    return;
+  }
+
+  try {
+    if (await fs.pathExists(filePath)) {
+      await fs.remove(filePath);
+    }
+  } catch (error) {
+    console.error(
+      "[PIN] File cleanup failed:",
+      error.message
+    );
+  }
+}
+
+
+function getReplyStore() {
+  if (
+    !global.GoatBot ||
+    !global.GoatBot.onReply
+  ) {
+    return null;
+  }
+
+  return global.GoatBot.onReply;
+}
+
+
+// ============================================================
+// COMMAND
+// ============================================================
 
 module.exports = {
-	config: {
-		name: "pinterest",
-		// ✅ FIX: "Pinterest" (capital) alias "pinterest" হয়ে pinsr.js এর সাথে conflict করত
-		// তাই সরিয়ে দিলাম
-		aliases: ["pinsearch", "pin2"],
-		version: "2.4.79",
-		author: "Mahi-- | fixed by Maruf",
-		countDown: 10,
-		role: 0,
-		description: "Search Pinterest for images, with canvas view for Browse.",
-		category: "Image",
-		guide: {
-			en:
-				"{pn} query [-count]\n" +
-				"• If count is used, it sends images directly.\n" +
-				"• If no count, it shows an interactive canvas.\n" +
-				"• Example: {pn} cute cat -5 (direct send)\n" +
-				"• Example: {pn} anime wallpaper (canvas view)"
-		}
-	},
 
-	// ✅ FIX: ST → onStart
-	onStart: async function ({ api, args, message, event }) {
-		let processingMessage = null;
-		try {
-			// Parse "-count" flag
-			let count = null;
-			let cleanArgs = [...args];
-			const countArg = cleanArgs.find((arg) => /^-\d+$/.test(arg));
-			if (countArg) {
-				count = parseInt(countArg.slice(1), 10);
-				cleanArgs = cleanArgs.filter((arg) => arg !== countArg);
-			}
+  config: {
+    name: COMMAND_NAME,
+    version: "6.0.0",
+    author: "Maruf",
+    countDown: 5,
+    role: 0,
 
-			const query = cleanArgs.join(" ").trim();
-			if (!query) {
-				return message.reply("Please provide a search query.");
-			}
+    description:
+      "Search Pinterest HD images with custom limit collage",
 
-			processingMessage = await message.reply("🔍 Searching on Pinterest...");
+    category: "media",
 
-			const res = await axios.get(
-				`https://egret-driving-cattle.ngrok-free.app/api/pin?query=${encodeURIComponent(query)}&num=90`,
-				{ timeout: 30000 }
-			);
-			const allImageUrls = res.data?.results || [];
+    guide: {
+      en:
+        "{pn} [query] - [limit]\n" +
+        "Example: {pn} naruto - 20"
+    },
 
-			if (allImageUrls.length === 0) {
-				if (processingMessage) await message.unsend(processingMessage.messageID).catch(() => {});
-				return message.reply(`No images found for "${query}".`);
-			}
+    dependencies: {
+      axios: "",
+      "fs-extra": "",
+      jimp: "^0.22.12"
+    }
+  },
 
-			// ——— Direct send mode (with -count) ———
-			if (count) {
-				const urls = allImageUrls.slice(0, count);
-				const streams = await Promise.all(urls.map((url) => getStreamFromURL(url).catch(() => null)));
-				const validStreams = streams.filter((s) => s);
 
-				if (processingMessage) await message.unsend(processingMessage.messageID).catch(() => {});
+  // ==========================================================
+  // START
+  // ==========================================================
 
-				return message.reply({
-					body: `Here are ${validStreams.length} image(s) for "${query}":`,
-					attachment: validStreams
-				});
-			}
+  onStart: async function ({
+    api,
+    event,
+    args,
+    message
+  }) {
 
-			// ——— Canvas view mode ———
-			const imagesPerPage = 21;
-			const totalPages = Math.ceil(allImageUrls.length / imagesPerPage);
-			const startIndex = 0;
-			const endIndex = Math.min(allImageUrls.length, imagesPerPage);
-			const imagesForPage1 = allImageUrls.slice(startIndex, endIndex).map((url, idx) => ({
-				url,
-				originalIndex: startIndex + idx
-			}));
+    const {
+      threadID,
+      messageID,
+      senderID
+    } = event;
 
-			const { outputPath: canvasPath, displayedMap } = await generatePinterestCanvas(
-				imagesForPage1, query, 1, totalPages
-			);
+    const {
+      query,
+      limit
+    } = parseInput(args);
 
-			const sentMessage = await message.reply({
-				body: `🖼️ Found ${allImageUrls.length} images for "${query}".\nReply with a number (shown on canvas) to get that image, or "next" for more.`,
-				attachment: fs.createReadStream(canvasPath)
-			});
+    if (!query) {
+      return message.reply(
+        "📌 Pinterest Search\n\n" +
+        "Usage: !pin <query> - <limit>\n" +
+        "Example: !pin naruto - 20"
+      );
+    }
 
-			// ✅ Safe cleanup
-			safeUnlink(canvasPath);
+    api.setMessageReaction(
+      "🔍",
+      messageID,
+      () => {},
+      true
+    );
 
-			global.GoatBot.onReply.set(sentMessage.messageID, {
-				commandName: this.config.name,
-				author: event.senderID,
-				allImageUrls,
-				query,
-				imagesPerPage,
-				currentPage: 1,
-				totalPages,
-				displayedMap,
-				displayCount: Array.isArray(displayedMap) ? displayedMap.length : 0
-			});
+    let waitMsg = null;
+    let collagePath = null;
 
-			if (processingMessage) await message.unsend(processingMessage.messageID).catch(() => {});
-		} catch (error) {
-			console.error("[pinterest onStart]", error.message);
-			if (processingMessage) {
-				try { await message.unsend(processingMessage.messageID); } catch (_) {}
-			}
-			message.reply("An error occurred. The server or API might be down.");
-		}
-	},
+    try {
 
-	onReply: async function ({ api, event, message, Reply }) {
-		try {
-			if (!Reply) return message.reply("Session expired. Please run the command again.");
+      waitMsg = await message.reply(
+        `🔍 Searching: ${query} (${limit} images)\n` +
+        `⏳ Please wait...`
+      );
 
-			const {
-				author, allImageUrls, query, imagesPerPage,
-				currentPage, totalPages, displayedMap, displayCount
-			} = Reply;
 
-			if (event.senderID !== author) return;
+      // --------------------------------------------------------
+      // GET API
+      // --------------------------------------------------------
 
-			const input = (event.body || "").trim().toLowerCase();
+      const baseUrl =
+        await getPinterestApi();
 
-			// ——— Next page ———
-			if (input === "next") {
-				if (currentPage >= totalPages) {
-					return message.reply("This is the last page of results.");
-				}
-				const nextPage = currentPage + 1;
-				const startIndex = (nextPage - 1) * imagesPerPage;
-				const endIndex = Math.min(startIndex + imagesPerPage, allImageUrls.length);
+      const apiUrl =
+        `${baseUrl}/api/maruf` +
+        `?query=${encodeURIComponent(query)}` +
+        `&limit=${limit}` +
+        `&random=true`;
 
-				const imagesForNextPage = allImageUrls.slice(startIndex, endIndex).map((url, idx) => ({
-					url,
-					originalIndex: startIndex + idx
-				}));
+      console.log(
+        `[PIN] Request: ${apiUrl}`
+      );
 
-				const processingMessage = await message.reply(`Loading page ${nextPage}...`);
-				const { outputPath: canvasPath, displayedMap: nextDisplayedMap } = await generatePinterestCanvas(
-					imagesForNextPage, query, nextPage, totalPages
-				);
+      const response =
+        await axios.get(apiUrl, {
+          timeout: 25000,
+          headers: {
+            "User-Agent": "Mozilla/5.0",
+            Accept: "application/json"
+          },
+          validateStatus: status =>
+            status >= 200 && status < 300
+        });
 
-				const sentMessage = await message.reply({
-					body: `🖼️ Page ${nextPage}/${totalPages}.\nReply with a number (shown on canvas) to get that image, or "next" for more.`,
-					attachment: fs.createReadStream(canvasPath)
-				});
+      const data = response.data;
 
-				safeUnlink(canvasPath);
+      const images =
+        extractImages(data)
+          .slice(0, limit);
 
-				await message.unsend(processingMessage.messageID).catch(() => {});
+      if (!images.length) {
+        throw new Error("NO_IMAGES");
+      }
 
-				global.GoatBot.onReply.set(sentMessage.messageID, {
-					commandName: module.exports.config.name,
-					author,
-					allImageUrls,
-					query,
-					imagesPerPage,
-					currentPage: nextPage,
-					totalPages,
-					displayedMap: nextDisplayedMap,
-					displayCount: Array.isArray(nextDisplayedMap) ? nextDisplayedMap.length : 0
-				});
 
-				return;
-			}
+      // --------------------------------------------------------
+      // CACHE
+      // --------------------------------------------------------
 
-			// ——— Number selection ———
-			const number = parseInt(input, 10);
-			if (!isNaN(number) && number > 0) {
-				if (!Array.isArray(displayedMap) || typeof displayCount !== "number") {
-					return message.reply("This page's images aren't available anymore. Please run the command again or type 'next'.");
-				}
+      await fs.ensureDir(
+        CACHE_DIR
+      );
 
-				if (number > displayCount) {
-					return message.reply(
-						`Invalid number. The current canvas shows only ${displayCount} image(s). Choose a number from 1 to ${displayCount}, or type "next" to load more images.`
-					);
-				}
 
-				const originalIndex = displayedMap[number - 1];
-				if (originalIndex == null || originalIndex < 0 || originalIndex >= allImageUrls.length) {
-					return message.reply(`Could not find that image. Please try again or request a different number.`);
-				}
+      // --------------------------------------------------------
+      // CREATE COLLAGE
+      // --------------------------------------------------------
 
-				const imageUrl = allImageUrls[originalIndex];
-				const stream = await getStreamFromURL(imageUrl).catch(() => null);
-				if (!stream) return message.reply("Failed to fetch the requested image.");
+      const collage =
+        await createCollage(images);
 
-				return message.reply({
-					body: `Image #${number} for query "${query}":`,
-					attachment: stream
-				});
-			}
+      collagePath = path.join(
+        CACHE_DIR,
+        `maruf_pin_${Date.now()}_${Math.random()
+          .toString(36)
+          .slice(2, 8)}.jpg`
+      );
 
-			return message.reply(`Reply with a number (from the canvas) to get that image, or "next" for more pages.`);
-		} catch (error) {
-			console.error("[pinterest onReply]", error.message);
-			message.reply("An error occurred while handling your reply.");
-		}
-	}
+      await collage
+        .quality(90)
+        .writeAsync(collagePath);
+
+
+      // --------------------------------------------------------
+      // REMOVE WAIT MESSAGE
+      // --------------------------------------------------------
+
+      if (
+        waitMsg &&
+        waitMsg.messageID
+      ) {
+        try {
+          api.unsendMessage(
+            waitMsg.messageID
+          );
+        } catch {}
+      }
+
+      api.setMessageReaction(
+        "✅",
+        messageID,
+        () => {},
+        true
+      );
+
+
+      // --------------------------------------------------------
+      // CAPTION
+      // --------------------------------------------------------
+
+      const caption =
+        `✨ 𝗣𝗜𝗡𝗧𝗘𝗥𝗘𝗦𝗧 𝗥𝗘𝗦𝗨𝗟𝗧𝗦 💖\n` +
+        `━━━━━━━━━━━━━\n` +
+        `🔍 ${query}\n` +
+        `🖼️ ${images.length} HD Images\n` +
+        `━━━━━━━━━━━━━\n` +
+        `↩️ Reply with a number (1-${images.length})`;
+
+
+      // --------------------------------------------------------
+      // SEND
+      // --------------------------------------------------------
+
+      return api.sendMessage(
+        {
+          body: caption,
+          attachment:
+            fs.createReadStream(
+              collagePath
+            )
+        },
+
+        threadID,
+
+        async (err, info) => {
+
+          /*
+           * Always clean the collage after
+           * Messenger has finished processing it.
+           */
+          await safeDelete(
+            collagePath
+          );
+
+          collagePath = null;
+
+          if (err) {
+            console.error(
+              "[PIN] sendMessage error:",
+              err
+            );
+
+            return;
+          }
+
+          if (
+            !info ||
+            !info.messageID
+          ) {
+            console.error(
+              "[PIN] No messageID returned."
+            );
+
+            return;
+          }
+
+          const replyStore =
+            getReplyStore();
+
+          if (!replyStore) {
+            console.error(
+              "[PIN] GoatBot onReply store unavailable."
+            );
+
+            return;
+          }
+
+          replyStore.set(
+            info.messageID,
+            {
+              commandName:
+                COMMAND_NAME,
+
+              messageID:
+                info.messageID,
+
+              author:
+                senderID,
+
+              images,
+
+              query,
+
+              createdAt:
+                Date.now()
+            }
+          );
+
+          setTimeout(() => {
+
+            try {
+              replyStore.delete(
+                info.messageID
+              );
+            } catch {}
+
+          }, SESSION_TIME);
+        },
+
+        messageID
+      );
+
+    } catch (error) {
+
+      await safeDelete(
+        collagePath
+      );
+
+      if (
+        waitMsg &&
+        waitMsg.messageID
+      ) {
+        try {
+          api.unsendMessage(
+            waitMsg.messageID
+          );
+        } catch {}
+      }
+
+      api.setMessageReaction(
+        "❌",
+        messageID,
+        () => {},
+        true
+      );
+
+      console.error(
+        "[MARUF PIN ERROR]",
+        error
+      );
+
+
+      if (
+        error.message === "NO_IMAGES"
+      ) {
+        return message.reply(
+          `❌ No images found for "${query}".`
+        );
+      }
+
+
+      if (
+        error.message === "ALL_IMAGES_FAILED"
+      ) {
+        return message.reply(
+          "❌ The images were found, but none could be downloaded."
+        );
+      }
+
+
+      if (
+        error.response
+      ) {
+        console.error(
+          "[PIN] HTTP status:",
+          error.response.status
+        );
+      }
+
+      return message.reply(
+        "❌ Pinterest API is currently unavailable. Please try again later."
+      );
+    }
+  },
+
+
+  // ==========================================================
+  // REPLY HANDLER
+  // ==========================================================
+
+  onReply: async function ({
+    api,
+    event,
+    Reply,
+    message
+  }) {
+
+    if (!Reply) {
+      return;
+    }
+
+    const {
+      author,
+      images,
+      query,
+      createdAt,
+      messageID: replyMessageID
+    } = Reply;
+
+    const {
+      senderID,
+      body,
+      threadID,
+      messageID
+    } = event;
+
+
+    // --------------------------------------------------------
+    // VALIDATE SESSION
+    // --------------------------------------------------------
+
+    if (
+      !Array.isArray(images) ||
+      images.length === 0
+    ) {
+      const replyStore =
+        getReplyStore();
+
+      if (
+        replyStore &&
+        replyMessageID
+      ) {
+        replyStore.delete(
+          replyMessageID
+        );
+      }
+
+      return message.reply(
+        "⏰ This Pinterest session is no longer available. Use !pin again."
+      );
+    }
+
+
+    // --------------------------------------------------------
+    // AUTHOR CHECK
+    // --------------------------------------------------------
+
+    if (
+      String(senderID) !==
+      String(author)
+    ) {
+      return message.reply(
+        "⚠️ Only the person who performed the search can select an image."
+      );
+    }
+
+
+    // --------------------------------------------------------
+    // EXPIRATION
+    // --------------------------------------------------------
+
+    if (
+      createdAt &&
+      Date.now() - createdAt >
+        SESSION_TIME
+    ) {
+
+      const replyStore =
+        getReplyStore();
+
+      if (
+        replyStore &&
+        replyMessageID
+      ) {
+        replyStore.delete(
+          replyMessageID
+        );
+      }
+
+      return message.reply(
+        "⏰ Session expired. Use !pin again."
+      );
+    }
+
+
+    // --------------------------------------------------------
+    // PARSE NUMBER
+    // --------------------------------------------------------
+
+    const text =
+      typeof body === "string"
+        ? body.trim()
+        : "";
+
+    /*
+     * Only accept a plain integer.
+     * This prevents values such as:
+     * 1abc
+     * 1.5
+     * 1 2
+     */
+    if (!/^\d+$/.test(text)) {
+      return message.reply(
+        `❌ Invalid choice. Reply with a number from 1-${images.length}.`
+      );
+    }
+
+    const choice =
+      Number.parseInt(text, 10);
+
+    if (
+      !Number.isSafeInteger(choice) ||
+      choice < 1 ||
+      choice > images.length
+    ) {
+      return message.reply(
+        `❌ Invalid choice. Reply with a number from 1-${images.length}.`
+      );
+    }
+
+
+    api.setMessageReaction(
+      "📥",
+      messageID,
+      () => {},
+      true
+    );
+
+
+    let imgPath = null;
+
+    try {
+
+      const selectedUrl =
+        images[choice - 1];
+
+      if (
+        !isValidImageUrl(
+          selectedUrl
+        )
+      ) {
+        throw new Error(
+          "INVALID_IMAGE_URL"
+        );
+      }
+
+
+      await fs.ensureDir(
+        CACHE_DIR
+      );
+
+
+      // ------------------------------------------------------
+      // DOWNLOAD SELECTED IMAGE
+      // ------------------------------------------------------
+
+      const imageBuffer =
+        await downloadImage(
+          selectedUrl
+        );
+
+
+      /*
+       * Let Jimp validate the downloaded
+       * content before sending it.
+       */
+      const selectedImage =
+        await Jimp.read(
+          imageBuffer
+        );
+
+
+      /*
+       * Re-encode as JPEG.
+       *
+       * This prevents Messenger from receiving
+       * HTML, malformed files, WebP edge cases,
+       * etc. as the attachment.
+       */
+      imgPath = path.join(
+        CACHE_DIR,
+        `maruf_pin_image_${Date.now()}_${Math.random()
+          .toString(36)
+          .slice(2, 8)}.jpg`
+      );
+
+      await selectedImage
+        .quality(95)
+        .writeAsync(imgPath);
+
+
+      // ------------------------------------------------------
+      // DELETE REPLY SESSION
+      // ------------------------------------------------------
+
+      const replyStore =
+        getReplyStore();
+
+      if (
+        replyStore &&
+        replyMessageID
+      ) {
+        replyStore.delete(
+          replyMessageID
+        );
+      }
+
+
+      api.setMessageReaction(
+        "✅",
+        messageID,
+        () => {},
+        true
+      );
+
+
+      // ------------------------------------------------------
+      // CAPTION
+      // ------------------------------------------------------
+
+      const caption =
+        `✨ 𝗣𝗜𝗡𝗧𝗘𝗥𝗘𝗦𝗧 𝗜𝗠𝗔𝗚𝗘\n` +
+        `━━━━━━━━━━━━\n` +
+        `🔍 ${query}\n` +
+        `📌 Image #${choice}\n` +
+        `━━━━━━━━━━━━\n` +
+        `💖 Powered by Maruf`;
+
+
+      // ------------------------------------------------------
+      // SEND IMAGE
+      // ------------------------------------------------------
+
+      return api.sendMessage(
+        {
+          body: caption,
+          attachment:
+            fs.createReadStream(
+              imgPath
+            )
+        },
+
+        threadID,
+
+        async err => {
+
+          await safeDelete(
+            imgPath
+          );
+
+          imgPath = null;
+
+          if (err) {
+            console.error(
+              "[PIN] Failed sending selected image:",
+              err
+            );
+          }
+        },
+
+        messageID
+      );
+
+    } catch (error) {
+
+      await safeDelete(
+        imgPath
+      );
+
+      api.setMessageReaction(
+        "❌",
+        messageID,
+        () => {},
+        true
+      );
+
+      console.error(
+        "[MARUF PIN REPLY ERROR]",
+        error
+      );
+
+
+      if (
+        error.message ===
+        "INVALID_IMAGE_URL"
+      ) {
+        return message.reply(
+          "❌ This image URL is no longer valid. Please run !pin again."
+        );
+      }
+
+
+      return message.reply(
+        "❌ Failed to download or process the selected image."
+      );
+    }
+  }
 };
