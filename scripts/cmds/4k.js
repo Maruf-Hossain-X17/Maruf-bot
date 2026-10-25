@@ -1,89 +1,120 @@
-const axios = require("axios");
-
-const mahmud = async () => {
-        const base = await axios.get("https://raw.githubusercontent.com/mahmudx7/HINATA/main/baseApiUrl.json");
-        return base.data.mahmud;
-};
-
 module.exports = {
-        config: {
-                name: "4k",
-                aliases: ["hd", "upscale"],
-                version: "1.7",
-                author: "MahMUD",
-                countDown: 10,
-                role: 0,
-                description: {
-                        bn: "AI এর মাধ্যমে ছবির কোয়ালিটি 4K বা HD করুন",
-                        en: "Enhance or restore image quality to 4K using AI",
-                        vi: "Nâng cao chất lượng hình ảnh lên 4K bằng AI"
-                },
-                category: "tools",
-                guide: {
-                        bn: '   {pn} [url]: ছবির লিংকের মাধ্যমে HD করুন\n   অথবা ছবির রিপ্লাইয়ে {pn} লিখুন',
-                        en: '   {pn} [url]: Upscale image via URL\n   Or reply to an image with {pn}',
-                        vi: '   {pn} [url]: Nâng cấp ảnh qua URL\n   Hoặc phản hồi ảnh bằng {pn}'
-                }
+  config: {
+    name: "4k",
+    aliases: ["hd", "upscale"],
+    version: "2.1.0",
+    author: "Maruf",
+    countDown: 10,
+    role: 0,
+    shortDescription: "AI 4x HD Image",
+    longDescription: "Upscale images to 4x HD using AI",
+    category: "image",
+    guide: "{pn} (reply to an image)"
+  },
+
+  onStart: async function ({ message, event }) {
+    const axios = require("axios");
+
+    // API gateway route
+    const API_URL =
+      "https://www.maruf-api.abrdns.com/4k/api/hd/maruf";
+
+    try {
+      // Find an image from the replied message or current message
+      const replyAttachments =
+        event.messageReply?.attachments || [];
+
+      const currentAttachments =
+        event.attachments || [];
+
+      const allAttachments = [
+        ...replyAttachments,
+        ...currentAttachments
+      ];
+
+      const photo = allAttachments.find(item =>
+        ["photo", "image"].includes(
+          String(item.type || "").toLowerCase()
+        ) && item.url
+      );
+
+      if (!photo?.url) {
+        return message.reply(
+          "❌ No image found.\n\n" +
+          "Please reply to an image with the command 4k.\n" +
+          "Aliases: hd, upscale"
+        );
+      }
+
+      await message.reply(
+        "⏳ Processing your image with AI...\n" +
+        "Please wait."
+      );
+
+      const response = await axios.get(API_URL, {
+        params: {
+          imgUrl: photo.url
         },
+        responseType: "arraybuffer",
+        timeout: 240000,
+        maxContentLength: 25 * 1024 * 1024,
+        maxBodyLength: 25 * 1024 * 1024,
+        validateStatus: status =>
+          status >= 200 && status < 300
+      });
 
-        langs: {
-                bn: {
-                        noImage: "• বেবি, একটি ছবিতে রিপ্লাই দাও অথবা ছবির লিংক দাও! 😘",
-                        wait: "𝐋𝐨𝐚𝐝𝐢𝐧𝐠 𝟒𝐤 𝐢𝐦𝐚𝐠𝐞...𝐰𝐚𝐢𝐭 𝐛𝐚𝐛𝐲 😘",
-                        success: "✅ | 𝐇𝐞𝐫𝐞'𝐬 𝐲𝐨𝐮𝐫 𝟒𝐤 𝐢𝐦𝐚𝐠𝐞 𝐛𝐚𝐛𝐲",
-                        error: "× সমস্যা হয়েছে: %1। প্রয়োজনে Contact MahMUD।\n•WhatsApp: 01836298139"
-                },
-                en: {
-                        noImage: "• Baby, please reply to an image or provide a link! 😘",
-                        wait: "𝐋𝐨𝐚𝐝𝐢𝐧𝐠 𝟒𝐤 𝐢𝐦𝐚𝐠𝐞...𝐰𝐚𝐢𝐭 𝐛𝐚𝐛𝐲 😘",
-                        success: "✅ | 𝐇𝐞𝐫𝐞'𝐬 𝐲𝐨𝐮𝐫 𝟒𝐤 𝐢𝐦𝐚𝐠𝐞 𝐛𝐚𝐛𝐲",
-                        error: "× API error: %1. Contact MahMUD for help.\n•WhatsApp: 01836298139"
-                },
-                vi: {
-                        noImage: "• Cưng ơi, hãy phản hồi một bức ảnh hoặc gửi link! 😘",
-                        wait: "𝐋𝐨𝐚𝐝𝐢𝐧𝐠 𝟒𝐤 𝐢𝐦𝐚𝐠𝐞...𝐰𝐚𝐢𝐭 𝐛𝐚𝐛𝐲 😘",
-                        success: "✅ | 𝐇𝐞𝐫𝐞'𝐬 𝐲𝐨𝐮𝐫 𝟒𝐤 𝐢𝐦𝐚𝐠𝐞 𝐛𝐚𝐛𝐲",
-                        error: "× Lỗi: %1. Liên hệ MahMUD để được hỗ trợ.\n•WhatsApp: 01836298139"
-                }
-        },
+      const contentType = String(
+        response.headers["content-type"] || ""
+      ).toLowerCase();
 
-        onStart: async function ({ api, message, args, event, getLang }) {
-                const authorName = String.fromCharCode(77, 97, 104, 77, 85, 68);
-                if (this.config.author !== authorName) {
-                        return api.sendMessage("You are not authorized to change the author name.", event.threadID, event.messageID);
-                }
+      if (!contentType.startsWith("image/")) {
+        throw new Error("INVALID_IMAGE_RESPONSE");
+      }
 
-                let imgUrl;
-                if (event.messageReply?.attachments?.[0]?.type === "photo") {
-                        imgUrl = event.messageReply.attachments[0].url;
-                } else if (args[0]) {
-                        imgUrl = args.join(" ");
-                }
+      const imageBuffer = Buffer.from(response.data);
 
-                if (!imgUrl) return api.sendMessage(getLang("noImage"), event.threadID, event.messageID);
+      if (!imageBuffer.length) {
+        throw new Error("EMPTY_IMAGE_RESPONSE");
+      }
 
-                const waitMsg = await api.sendMessage(getLang("wait"), event.threadID, event.messageID);
-                api.setMessageReaction("😘", event.messageID, () => {}, true);
+      return await message.reply({
+        body: "✅ Your 4x HD image is ready!",
+        attachment: imageBuffer
+      });
 
-                try {
-                        const baseUrl = await mahmud();
-                        const apiUrl = `${baseUrl}/api/hd/mahmud?imgUrl=${encodeURIComponent(imgUrl)}`;
-                        
-                        const res = await axios.get(apiUrl, { responseType: "stream" });
+    } catch (error) {
+      // Keep technical details in server logs only
+      console.error(
+        "[4K ERROR]",
+        error.response?.status || "",
+        error.code || "",
+        error.message || "Unknown error"
+      );
 
-                        if (waitMsg?.messageID) api.unsendMessage(waitMsg.messageID);
-                        api.setMessageReaction("🪽", event.messageID, () => {}, true);
+      let userMessage =
+        "❌ Image processing failed. Please try again later.";
 
-                        return api.sendMessage({
-                                body: getLang("success"),
-                                attachment: res.data
-                        }, event.threadID, event.messageID);
+      if (
+        error.code === "ECONNABORTED" ||
+        error.code === "ETIMEDOUT"
+      ) {
+        userMessage =
+          "⏳ Image processing timed out. Please try again later.";
+      } else if (
+        error.response?.status === 429
+      ) {
+        userMessage =
+          "⚠️ The service is busy. Please try again later.";
+      }
 
-                } catch (err) {
-                        console.error("Error in 4k command:", err);
-                        if (waitMsg?.messageID) api.unsendMessage(waitMsg.messageID);
-                        api.setMessageReaction("❌", event.messageID, () => {}, true);
-                        return api.sendMessage(getLang("error", err.message), event.threadID, event.messageID);
-                }
-        }
+      try {
+        return await message.reply(userMessage);
+      } catch (replyError) {
+        console.error(
+          "[4K REPLY ERROR]",
+          replyError.message
+        );
+      }
+    }
+  }
 };
