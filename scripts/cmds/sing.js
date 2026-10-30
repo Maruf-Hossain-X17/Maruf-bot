@@ -91,7 +91,7 @@ module.exports = {
       // ২. অডিও স্ট্রিম তথ্য রিকোয়েস্ট
       const { data: resData } = await axios.get(apiUrl, {
         params: { url: searchQuery },
-        timeout: 30000
+        timeout: 60000
       });
 
       if (!resData || (!resData.status && !resData.success) || !resData.streamUrl) {
