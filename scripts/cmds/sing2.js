@@ -82,7 +82,7 @@ module.exports = {
         `https://www.maruf-api.abrdns.com/ytdl/ytDl?url=${encodeURIComponent(searchQuery)}`;
 
       const response = await axios.get(apiUrl, {
-        timeout: 60000
+        timeout: 80000
       });
 
       const data = response.data;
