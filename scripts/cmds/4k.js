@@ -95,7 +95,7 @@ module.exports = {
           imgUrl: photo.url
         },
         responseType: "arraybuffer",
-        timeout: 240000,
+        timeout: 50000,
         maxContentLength: 30 * 1024 * 1024,
         maxBodyLength: 30 * 1024 * 1024,
         validateStatus: status =>
