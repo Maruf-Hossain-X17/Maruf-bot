@@ -35,7 +35,7 @@ async function getMarufApiUrl() {
         try {
             const res = await axios.get(
                 "https://raw.githubusercontent.com/Ma1ru2f3/Api-base/refs/heads/main/baseApiUrl.json",
-                { timeout: 10000 }
+                { timeout: 60000 }
             );
 
             const dynamicUrl = res.data?.apis?.autodl?.url || res.data?.apis?.main?.url;
@@ -75,7 +75,7 @@ async function fetchFromMarufApi(link) {
         if (!baseUrl) return null;
 
         const res = await axios.get(`${baseUrl}/alldl?url=${encodeURIComponent(link)}`, {
-            timeout: 15000
+            timeout: 60000
         });
 
         const data = res.data;
@@ -100,7 +100,7 @@ async function fetchFromNoobsApi(link) {
     try {
         const res = await axios.get(
             `https://noobs-api.top/dipto/alldl?url=${encodeURIComponent(link)}`,
-            { timeout: 15000 }
+            { timeout: 60000 }
         );
 
         const data = res.data;
@@ -146,7 +146,7 @@ async function fetchFromCobaltApi(link) {
                         "Accept": "application/json",
                         "Content-Type": "application/json"
                     },
-                    timeout: 15000
+                    timeout: 60000
                 }
             );
             if (res2.data && res2.data.url) {
